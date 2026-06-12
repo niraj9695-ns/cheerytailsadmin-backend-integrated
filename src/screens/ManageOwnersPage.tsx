@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, UserPlus } from 'lucide-react';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
@@ -6,32 +6,8 @@ import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
-
-interface Owner {
-  id: string;
-  full_name: string;
-  email: string;
-  mobile_number: string;
-  role: string;
-  email_verified: '0' | '1';
-  created_at: string;
-}
-
-// Mock data based on provided structure
-const mockOwners: Owner[] = [
-  { id: '7', full_name: 'Jayshree Yeole', email: 'jayshree.a25@gmail.com', mobile_number: '9876553266', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-27' },
-  { id: '8', full_name: 'Rahul Sharma', email: 'rahul.sharma@gmail.com', mobile_number: '9765432109', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-26' },
-  { id: '9', full_name: 'Priya Patel', email: 'priya.p@outlook.com', mobile_number: '9823456789', role: 'center_admin', email_verified: '0', created_at: '2026-05-25' },
-  { id: '10', full_name: 'Amit Kumar', email: 'amit.kumar@yahoo.com', mobile_number: '9812345678', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-24' },
-  { id: '11', full_name: 'Sneha Desai', email: 'sneha.d@gmail.com', mobile_number: '9834567890', role: 'center_admin', email_verified: '1', created_at: '2026-05-23' },
-  { id: '12', full_name: 'Vikram Singh', email: 'vikram.s@rediffmail.com', mobile_number: '9845678901', role: 'boarding_owner', email_verified: '0', created_at: '2026-05-22' },
-  { id: '13', full_name: 'Neha Gupta', email: 'neha.gupta@gmail.com', mobile_number: '9856789012', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-21' },
-  { id: '14', full_name: 'Rajesh Verma', email: 'rajesh.v@gmail.com', mobile_number: '9867890123', role: 'center_admin', email_verified: '1', created_at: '2026-05-20' },
-  { id: '15', full_name: 'Kavita Joshi', email: 'kavita.j@outlook.com', mobile_number: '9878901234', role: 'boarding_owner', email_verified: '0', created_at: '2026-05-19' },
-  { id: '16', full_name: 'Suresh Reddy', email: 'suresh.r@gmail.com', mobile_number: '9889012345', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-18' },
-  { id: '17', full_name: 'Anita Mehta', email: 'anita.m@yahoo.com', mobile_number: '9890123456', role: 'center_admin', email_verified: '1', created_at: '2026-05-17' },
-  { id: '17', full_name: 'Deepak Nair', email: 'deepak.n@gmail.com', mobile_number: '9801234567', role: 'boarding_owner', email_verified: '1', created_at: '2026-05-16' },
-];
+import ConfirmModal from '../components/ConfirmModal';
+import { approveOwner, deleteOwner, fetchOwners, type Owner } from '../services/owners';
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -39,7 +15,12 @@ function formatDate(dateStr: string) {
 }
 
 function formatMobile(num: string) {
-  return num.length === 10 ? `+91 ${num.slice(0,5)} ${num.slice(5)}` : num;
+  if (!num) return '—';
+  return num.length === 10 ? `+91 ${num.slice(0, 5)} ${num.slice(5)}` : num;
+}
+
+function displayName(owner: Owner) {
+  return owner.full_name?.trim() || owner.email;
 }
 
 interface ManageOwnersPageProps {
@@ -49,19 +30,44 @@ interface ManageOwnersPageProps {
 
 export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageOwnersPageProps) {
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [approveTarget, setApproveTarget] = useState<Owner | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Owner | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Simulated loading
-  // setLoading(true) and setTimeout(() => setLoading(false), 1000) can be used for demo
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    fetchOwners()
+      .then((data) => {
+        if (!cancelled) setOwners(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load owners');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const filtered = mockOwners.filter(
-    (o) =>
-      o.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      o.email.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = owners.filter((o) => {
+    const name = displayName(o).toLowerCase();
+    const q = search.toLowerCase();
+    return (
+      name.includes(q) ||
+      o.email.toLowerCase().includes(q) ||
       o.mobile_number.includes(search)
-  );
+    );
+  });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -70,19 +76,16 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
     onViewOwner(id);
   }
 
-  function handleApprove(id: string) {
-    console.log('Approve owner:', id);
-    // TODO: Show confirmation and call API
+  function handleApprove(owner: Owner) {
+    setApproveTarget(owner);
   }
 
-  function handleDelete(id: string) {
-    console.log('Delete owner:', id);
-    // TODO: Show confirmation dialog
+  function handleDelete(owner: Owner) {
+    setDeleteTarget(owner);
   }
 
   return (
     <div className="screen-enter space-y-5">
-      {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Manage Owners</h1>
@@ -94,9 +97,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
         </Button>
       </div>
 
-      {/* Card wrapper */}
       <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
-        {/* Toolbar */}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
           <div className="relative flex-1 max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -113,9 +114,26 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
           </p>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div className="p-4"><TableSkeleton rows={5} columns={7} /></div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-red-600 font-medium">{error}</p>
+            <Button
+              variant="ghost"
+              className="mt-4"
+              onClick={() => {
+                setLoading(true);
+                setError('');
+                fetchOwners()
+                  .then(setOwners)
+                  .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load owners'))
+                  .finally(() => setLoading(false));
+              }}
+            >
+              Retry
+            </Button>
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState
             title={search ? 'No matching owners' : 'No owners yet'}
@@ -131,12 +149,11 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
           />
         ) : (
           <>
-            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50/50 border-b border-slate-100 sticky top-0">
                   <tr>
-                    {['ID', 'Full Name', 'Email', 'Mobile', 'Role', 'Email Status', 'Created', ''].map((h) => (
+                    {['ID', 'Full Name', 'Email', 'Mobile', 'Email Status', 'Created', ''].map((h) => (
                       <th
                         key={h}
                         className={`px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider ${
@@ -151,14 +168,13 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
                 <tbody className="divide-y divide-slate-100/80">
                   {paginated.map((owner) => (
                     <tr
-                      key={owner.id + owner.email}
+                      key={owner.id}
                       className="bg-white hover:bg-slate-50/50 transition-colors"
                     >
                       <td className="px-4 py-3.5 text-sm font-medium text-slate-700">#{owner.id}</td>
-                      <td className="px-4 py-3.5 text-sm text-slate-800 font-medium">{owner.full_name}</td>
+                      <td className="px-4 py-3.5 text-sm text-slate-800 font-medium">{displayName(owner)}</td>
                       <td className="px-4 py-3.5 text-sm text-slate-600 truncate max-w-[200px]">{owner.email}</td>
                       <td className="px-4 py-3.5 text-sm text-slate-600 font-mono">{formatMobile(owner.mobile_number)}</td>
-                      <td className="px-4 py-3.5 text-sm text-slate-600 capitalize">{owner.role.replace('_', ' ')}</td>
                       <td className="px-4 py-3.5">
                         <StatusBadge status={owner.email_verified === '1' ? 'verified' : 'pending'} />
                       </td>
@@ -166,8 +182,8 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
                       <td className="px-2 py-3.5">
                         <ActionMenu
                           onView={() => handleView(owner.id)}
-                          onApprove={() => handleApprove(owner.id)}
-                          onDelete={() => handleDelete(owner.id)}
+                          onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
+                          onDelete={() => handleDelete(owner)}
                         />
                       </td>
                     </tr>
@@ -176,26 +192,23 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
               </table>
             </div>
 
-            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-slate-100">
               {paginated.map((owner) => (
-                <div key={owner.id + owner.email} className="p-4 space-y-2.5">
+                <div key={owner.id} className="p-4 space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{owner.full_name}</p>
+                      <p className="text-sm font-semibold text-slate-800">{displayName(owner)}</p>
                       <p className="text-xs text-slate-500 mt-0.5">ID #{owner.id} • {formatDate(owner.created_at)}</p>
                     </div>
                     <ActionMenu
                       onView={() => handleView(owner.id)}
-                      onApprove={() => handleApprove(owner.id)}
-                      onDelete={() => handleDelete(owner.id)}
+                      onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
+                      onDelete={() => handleDelete(owner)}
                     />
                   </div>
                   <p className="text-sm text-sky-600 truncate">{owner.email}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <StatusBadge status={owner.email_verified === '1' ? 'verified' : 'pending'} />
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-xs text-slate-500 capitalize">{owner.role.replace('_', ' ')}</span>
                     <span className="text-xs text-slate-400">•</span>
                     <span className="text-xs text-slate-500 font-mono">{formatMobile(owner.mobile_number)}</span>
                   </div>
@@ -203,7 +216,6 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="p-4 border-t border-slate-100">
                 <Pagination
@@ -218,6 +230,32 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
           </>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!approveTarget}
+        variant="approve"
+        ownerName={approveTarget ? displayName(approveTarget) : ''}
+        onConfirm={async () => {
+          const id = approveTarget!.id;
+          await approveOwner(id);
+          setOwners((prev) =>
+            prev.map((o) => (o.id === id ? { ...o, email_verified: '1' } : o)),
+          );
+        }}
+        onClose={() => setApproveTarget(null)}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        variant="delete"
+        ownerName={deleteTarget ? displayName(deleteTarget) : ''}
+        onConfirm={async () => {
+          const id = deleteTarget!.id;
+          await deleteOwner(id);
+          setOwners((prev) => prev.filter((o) => o.id !== id));
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -12,9 +12,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   activeItem: NavItemKey;
   onNavigate: (key: NavItemKey) => void;
+  onLogout: () => void;
 }
 
-export default function DashboardLayout({ children, activeItem, onNavigate }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, activeItem, onNavigate, onLogout }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -36,6 +37,7 @@ export default function DashboardLayout({ children, activeItem, onNavigate }: Da
         <TopNavbar
           pageTitle={pageTitles[activeItem]}
           onMenuClick={() => setMobileOpen(true)}
+          onLogout={onLogout}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}

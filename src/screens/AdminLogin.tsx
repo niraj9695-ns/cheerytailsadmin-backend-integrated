@@ -3,9 +3,10 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Logo from '../components/Logo';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
+import { useAuth } from '../context/AuthContext';
 
 interface AdminLoginProps {
-  onSendOTP: (email: string) => void;
+  onSendOTP: (email: string, password: string) => void;
 }
 
 interface FormErrors {
@@ -14,11 +15,13 @@ interface FormErrors {
 }
 
 export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState('');
 
   function validate(): boolean {
     const newErrors: FormErrors = {};
@@ -36,15 +39,20 @@ export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    // Simulate network delay — replace with real API call later
-    setTimeout(() => {
+    setApiError('');
+    try {
+      const otp = await login(email, password);
+      console.log('Login OTP:', otp);
+      onSendOTP(email, password);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+    } finally {
       setLoading(false);
-      onSendOTP(email);
-    }, 1400);
+    }
   }
 
   return (
@@ -124,6 +132,15 @@ export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
                 Forgot password?
               </button>
             </div>
+
+            {apiError && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm font-medium bg-red-50 text-red-600 border border-red-200"
+                role="alert"
+              >
+                {apiError}
+              </div>
+            )}
 
             <Button type="submit" loading={loading} fullWidth className="mt-1">
               {loading ? 'Sending OTP…' : 'Send OTP'}

@@ -21,101 +21,14 @@ import {
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface OwnerDetail {
-  id: string;
-  full_name: string;
-  email: string;
-  mobile_number: string;
-  alternate_contact: string;
-  emergency_contact_name: string;
-  emergency_contact_number: string;
-  residential_address: string;
-  current_address: string;
-  role: string;
-  email_verified: '0' | '1';
-  terms_accepted: '0' | '1';
-  created_at: string;
-}
+import { assetUrl } from '../lib/api';
+import { approveOwner, deleteOwner, fetchOwnerById, type Owner } from '../services/owners';
 
 interface OwnerDetailsPageProps {
   ownerId: string;
   onBack: () => void;
   onNavigateDashboard: () => void;
   onNavigateOwners: () => void;
-}
-
-// ─── Mock data ───────────────────────────────────────────────────────────────
-
-const mockDetails: Record<string, OwnerDetail> = {
-  '7': {
-    id: '7',
-    full_name: 'Jayshree Yeole',
-    email: 'jayshree.a25@gmail.com',
-    mobile_number: '9876553266',
-    alternate_contact: '9765440011',
-    emergency_contact_name: 'Suresh Yeole',
-    emergency_contact_number: '9823001122',
-    residential_address: '14, Shivaji Nagar, Pune, Maharashtra 411005',
-    current_address: '14, Shivaji Nagar, Pune, Maharashtra 411005',
-    role: 'boarding_owner',
-    email_verified: '1',
-    terms_accepted: '1',
-    created_at: '2026-05-27',
-  },
-  '8': {
-    id: '8',
-    full_name: 'Rahul Sharma',
-    email: 'rahul.sharma@gmail.com',
-    mobile_number: '9765432109',
-    alternate_contact: '',
-    emergency_contact_name: 'Meena Sharma',
-    emergency_contact_number: '9812233445',
-    residential_address: 'B-204, Andheri West, Mumbai, Maharashtra 400058',
-    current_address: 'B-204, Andheri West, Mumbai, Maharashtra 400058',
-    role: 'boarding_owner',
-    email_verified: '1',
-    terms_accepted: '1',
-    created_at: '2026-05-26',
-  },
-  '9': {
-    id: '9',
-    full_name: 'Priya Patel',
-    email: 'priya.p@outlook.com',
-    mobile_number: '9823456789',
-    alternate_contact: '9887766554',
-    emergency_contact_name: 'Kiran Patel',
-    emergency_contact_number: '9900112233',
-    residential_address: '301, Satellite Road, Ahmedabad, Gujarat 380015',
-    current_address: 'C-12, Prahladnagar, Ahmedabad, Gujarat 380051',
-    role: 'center_admin',
-    email_verified: '0',
-    terms_accepted: '0',
-    created_at: '2026-05-25',
-  },
-};
-
-// Fallback for any ID not in the mock
-function getMockOwner(id: string): OwnerDetail {
-  return (
-    mockDetails[id] ?? {
-      id,
-      full_name: 'Unknown Owner',
-      email: 'unknown@example.com',
-      mobile_number: '0000000000',
-      alternate_contact: '',
-      emergency_contact_name: '',
-      emergency_contact_number: '',
-      residential_address: '',
-      current_address: '',
-      role: 'boarding_owner',
-      email_verified: '0',
-      terms_accepted: '0',
-      created_at: new Date().toISOString().slice(0, 10),
-    }
-  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -210,30 +123,40 @@ export default function OwnerDetailsPage({
   onNavigateOwners,
 }: OwnerDetailsPageProps) {
   const [loading, setLoading] = useState(true);
-  const [owner, setOwner] = useState<OwnerDetail | null>(null);
+  const [error, setError] = useState('');
+  const [owner, setOwner] = useState<Owner | null>(null);
   const [approveOpen, setApproveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    const t = setTimeout(() => {
-      setOwner(getMockOwner(ownerId));
-      setLoading(false);
-    }, 1200);
-    return () => clearTimeout(t);
+    setError('');
+    fetchOwnerById(ownerId)
+      .then((data) => {
+        if (!cancelled) setOwner(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load owner details');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [ownerId]);
 
-  function mockApprove(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 1400));
+  function displayName(o: Owner) {
+    return o.full_name?.trim() || o.email;
   }
 
-  function mockDelete(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 1200));
-  }
-
-  function getInitials(name: string) {
-    return name
-      .split(' ')
+  function getInitials(o: Owner) {
+    const name = displayName(o);
+    const parts = name.split(/[\s@]+/).filter(Boolean);
+    return parts
       .map((w) => w[0])
       .slice(0, 2)
       .join('')
@@ -250,8 +173,22 @@ export default function OwnerDetailsPage({
 
   const isVerified = owner?.email_verified === '1';
   const hasTerms = owner?.terms_accepted === '1';
+  const aadharUrl = assetUrl(owner?.aadhar_file);
+  const isAadharPdf = aadharUrl?.toLowerCase().endsWith('.pdf');
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  if (!loading && error) {
+    return (
+      <div className="screen-enter space-y-5">
+        <Button variant="ghost" onClick={onBack} className="!px-4 !py-2.5 !text-sm">
+          <ArrowLeft size={15} />
+          Back to List
+        </Button>
+        <div className="bg-white rounded-xl border border-red-100 p-8 text-center">
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen-enter space-y-5">
@@ -264,7 +201,7 @@ export default function OwnerDetailsPage({
             <button onClick={onNavigateOwners} className="hover:text-sky-500 transition-colors">Manage Owners</button>
             <ChevronRight size={12} className="text-slate-300" />
             <span className="text-slate-600 font-medium">
-              {loading ? 'Loading…' : owner?.full_name ?? 'Owner Details'}
+              {loading ? 'Loading…' : owner ? displayName(owner) : 'Owner Details'}
             </span>
           </nav>
           <h1 className="text-2xl font-bold text-slate-900">Owner Details</h1>
@@ -313,7 +250,7 @@ export default function OwnerDetailsPage({
               {/* Avatar */}
               <div className="relative mb-4">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-blue-400/30">
-                  {getInitials(owner!.full_name)}
+                  {getInitials(owner!)}
                 </div>
                 <span
                   className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white ${
@@ -323,7 +260,7 @@ export default function OwnerDetailsPage({
                 />
               </div>
 
-              <h2 className="text-base font-bold text-slate-900 mb-1">{owner!.full_name}</h2>
+              <h2 className="text-base font-bold text-slate-900 mb-1">{displayName(owner!)}</h2>
               <p className="text-xs text-slate-500 mb-3 font-mono">{owner!.email}</p>
 
               {/* Role badge */}
@@ -375,10 +312,10 @@ export default function OwnerDetailsPage({
               {/* Mobile: inline profile header */}
               <div className="lg:hidden bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
-                  {getInitials(owner!.full_name)}
+                  {getInitials(owner!)}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-slate-900 truncate">{owner!.full_name}</h2>
+                  <h2 className="text-base font-bold text-slate-900 truncate">{displayName(owner!)}</h2>
                   <p className="text-xs text-slate-500 truncate">{owner!.email}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <StatusBadge status={isVerified ? 'verified' : 'pending'} />
@@ -389,7 +326,7 @@ export default function OwnerDetailsPage({
 
               {/* ① Personal Information */}
               <SectionCard icon={<User size={16} />} title="Personal Information">
-                <DetailRow icon={<User size={15} />} label="Full Name" value={owner!.full_name} />
+                <DetailRow icon={<User size={15} />} label="Full Name" value={displayName(owner!)} />
                 <DetailRow icon={<Shield size={15} />} label="Role" value={owner!.role.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())} />
                 <DetailRow icon={<Calendar size={15} />} label="Account Created" value={formatDate(owner!.created_at)} />
               </SectionCard>
@@ -398,7 +335,7 @@ export default function OwnerDetailsPage({
               <SectionCard icon={<Phone size={16} />} title="Contact Information">
                 <DetailRow icon={<Mail size={15} />} label="Email Address" value={owner!.email} />
                 <DetailRow icon={<Phone size={15} />} label="Mobile Number" value={owner!.mobile_number ? fmtMobile(owner!.mobile_number) : ''} />
-                <DetailRow icon={<PhoneCall size={15} />} label="Alternate Contact" value={owner!.alternate_contact ? fmtMobile(owner!.alternate_contact) : ''} />
+                <DetailRow icon={<PhoneCall size={15} />} label="Alternate Contact" value={owner!.alternate_contact_number ? fmtMobile(owner!.alternate_contact_number) : ''} />
                 <DetailRow icon={<Contact size={15} />} label="Emergency Contact Name" value={owner!.emergency_contact_name} />
                 <DetailRow icon={<PhoneCall size={15} />} label="Emergency Contact Number" value={owner!.emergency_contact_number ? fmtMobile(owner!.emergency_contact_number) : ''} />
               </SectionCard>
@@ -406,7 +343,7 @@ export default function OwnerDetailsPage({
               {/* ③ Address Information */}
               <SectionCard icon={<MapPin size={16} />} title="Address Information">
                 <DetailRow icon={<Home size={15} />} label="Residential Address" value={owner!.residential_address} />
-                <DetailRow icon={<MapPin size={15} />} label="Current Address" value={owner!.current_address} />
+                <DetailRow icon={<MapPin size={15} />} label="Current Address" value={owner!.current_address ?? ''} />
               </SectionCard>
 
               {/* ④ Account Information */}
@@ -430,26 +367,59 @@ export default function OwnerDetailsPage({
                 <div className="p-5">
                   <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">Aadhar Card</p>
 
-                  {/* Empty state — no document uploaded */}
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-sky-200 hover:bg-sky-50/30 transition-colors group cursor-default">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-sky-100 flex items-center justify-center mb-3 transition-colors">
-                      <Upload size={20} className="text-slate-400 group-hover:text-sky-400 transition-colors" />
+                  {aadharUrl ? (
+                    <div className="space-y-3">
+                      {isAadharPdf ? (
+                        <a
+                          href={aadharUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-sky-200 text-sky-600 bg-sky-50 hover:bg-sky-100 transition-colors"
+                        >
+                          <FileText size={16} />
+                          View Aadhar Document (PDF)
+                        </a>
+                      ) : (
+                        <a href={aadharUrl} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={aadharUrl}
+                            alt="Aadhar card"
+                            className="max-h-64 rounded-xl border border-slate-200 object-contain"
+                          />
+                        </a>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium border border-slate-200">
+                          <CreditCard size={12} />
+                          Aadhar Card
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[11px] font-medium border border-emerald-200">
+                          <CheckCircle2 size={11} />
+                          Uploaded
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm font-semibold text-slate-600 mb-1">No document uploaded</p>
-                    <p className="text-xs text-slate-400 max-w-[200px]">
-                      The owner has not uploaded an Aadhar card yet.
-                    </p>
-                    <div className="mt-4 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium border border-slate-200">
-                        <CreditCard size={12} />
-                        Aadhar Card
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 text-[11px] font-medium border border-amber-200">
-                        <AlertCircle size={11} />
-                        Pending
-                      </span>
+                  ) : (
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-sky-200 hover:bg-sky-50/30 transition-colors group cursor-default">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-sky-100 flex items-center justify-center mb-3 transition-colors">
+                        <Upload size={20} className="text-slate-400 group-hover:text-sky-400 transition-colors" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-600 mb-1">No document uploaded</p>
+                      <p className="text-xs text-slate-400 max-w-[200px]">
+                        The owner has not uploaded an Aadhar card yet.
+                      </p>
+                      <div className="mt-4 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium border border-slate-200">
+                          <CreditCard size={12} />
+                          Aadhar Card
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 text-[11px] font-medium border border-amber-200">
+                          <AlertCircle size={11} />
+                          Pending
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </>
@@ -461,8 +431,8 @@ export default function OwnerDetailsPage({
       <ConfirmModal
         isOpen={approveOpen}
         variant="approve"
-        ownerName={owner?.full_name ?? ''}
-        onConfirm={mockApprove}
+        ownerName={owner ? displayName(owner) : ''}
+        onConfirm={() => approveOwner(ownerId)}
         onClose={() => setApproveOpen(false)}
         onSuccess={() => {
           if (owner) setOwner({ ...owner, email_verified: '1' });
@@ -472,8 +442,8 @@ export default function OwnerDetailsPage({
       <ConfirmModal
         isOpen={deleteOpen}
         variant="delete"
-        ownerName={owner?.full_name ?? ''}
-        onConfirm={mockDelete}
+        ownerName={owner ? displayName(owner) : ''}
+        onConfirm={() => deleteOwner(ownerId)}
         onClose={() => setDeleteOpen(false)}
         onSuccess={onBack}
       />

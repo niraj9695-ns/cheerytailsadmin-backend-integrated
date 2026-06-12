@@ -39,211 +39,13 @@ import {
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface CenterDetail {
-  id: string;
-  center_name: string;
-  center_type: 'dog' | 'cat' | 'bird' | 'fish' | 'pet';
-  description: string;
-  address_line1: string;
-  address_line2: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  latitude: string;
-  longitude: string;
-  primary_contact: string;
-  email: string;
-  website: string;
-  daily_capacity: string;
-  total_capacity: string;
-  price_per_day: string;
-  service_radius: string;
-  registration_license: string;
-  has_license_proof: boolean;
-  amenities: string[];
-  opening_time: string;
-  closing_time: string;
-  is_active: '0' | '1';
-  created_at: string;
-  // Boarding details
-  property_type: 'residential' | 'commercial';
-  fencing_status: string;
-  supervision_level: string;
-  accepted_pet_types: string[];
-  size_restrictions: string[];
-  age_preferences: string[];
-  vaccination_policy: string;
-  required_vaccines: string[];
-  boarding_services: string[];
-  special_instructions: string;
-}
+import { fetchCenterById, type CenterDetail } from '../services/centers';
 
 interface CenterDetailsPageProps {
   centerId: string;
   onBack: () => void;
   onNavigateDashboard: () => void;
   onNavigateCenters: () => void;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const mockCenters: Record<string, CenterDetail> = {
-  '7': {
-    id: '7',
-    center_name: 'Sunrise Pet Resort',
-    center_type: 'dog',
-    description: 'A premium boarding facility for dogs with spacious play areas, climate-controlled suites, and 24/7 veterinary support. We provide personalized care tailored to each pet.',
-    address_line1: '1234 Pet Haven Boulevard',
-    address_line2: 'Suite 200',
-    city: 'New York',
-    state: 'NY',
-    zip_code: '10001',
-    latitude: '40.7128',
-    longitude: '-74.0060',
-    primary_contact: '(212) 555-0147',
-    email: 'info@sunrisepetresort.com',
-    website: 'https://sunrisepetresort.com',
-    daily_capacity: '25',
-    total_capacity: '50',
-    price_per_day: '40',
-    service_radius: '15',
-    registration_license: 'PET-2026-NY-0007',
-    has_license_proof: true,
-    amenities: ['AC', 'Play Area', 'CCTV', '24/7 Vet'],
-    opening_time: '08:00',
-    closing_time: '20:00',
-    is_active: '1',
-    created_at: '2026-05-27',
-    property_type: 'commercial',
-    fencing_status: 'Fully Fenced Yard',
-    supervision_level: '24x7',
-    accepted_pet_types: ['Dog', 'Cat'],
-    size_restrictions: ['Small (Under 20 lbs)', 'Medium (20-50 lbs)', 'Large (50+ lbs)'],
-    age_preferences: ['Puppies (3-12 months)', 'Adult (1-7 years)', 'Senior (7+ years)'],
-    vaccination_policy: 'Mandatory',
-    required_vaccines: ['Rabies', 'DHPP', 'Bordetella', 'Leptospirosis'],
-    boarding_services: ['Overnight Boarding', 'Day Care', 'Grooming', 'Training'],
-    special_instructions: 'Please bring your pet\'s favorite toys and blanket. All pets must be flea-treated and dewormed at least 48 hours prior to arrival. We provide premium meals, but you may bring your own food if preferred.',
-  },
-  '8': {
-    id: '8',
-    center_name: 'Paws & Claws Haven',
-    center_type: 'cat',
-    description: 'A cozy sanctuary designed exclusively for our feline friends. Features climbing towers, sun lounges, and quiet relaxation spaces.',
-    address_line1: '567 Whisker Lane',
-    address_line2: '',
-    city: 'Los Angeles',
-    state: 'CA',
-    zip_code: '90001',
-    latitude: '34.0522',
-    longitude: '-118.2437',
-    primary_contact: '(323) 555-0298',
-    email: 'hello@pawsclawshaven.com',
-    website: 'https://pawsclawshaven.com',
-    daily_capacity: '20',
-    total_capacity: '35',
-    price_per_day: '35',
-    service_radius: '10',
-    registration_license: 'PET-2026-CA-0008',
-    has_license_proof: false,
-    amenities: ['AC', 'CCTV', '24/7 Vet'],
-    opening_time: '09:00',
-    closing_time: '18:00',
-    is_active: '1',
-    created_at: '2026-05-26',
-    property_type: 'residential',
-    fencing_status: 'Indoor Only Facility',
-    supervision_level: 'Daytime Only',
-    accepted_pet_types: ['Cat'],
-    size_restrictions: ['Small (Under 10 lbs)'],
-    age_preferences: ['Adult (1-10 years)'],
-    vaccination_policy: 'Mandatory',
-    required_vaccines: ['Rabies', 'FVRCP'],
-    boarding_services: ['Overnight Boarding', 'Day Care'],
-    special_instructions: 'Indoor-only facility. We provide fresh litter boxes daily. Please bring your cat\'s current vaccination records. We cannot accept unspayed females in heat.',
-  },
-  '9': {
-    id: '9',
-    center_name: 'Feathered Friends Lodge',
-    center_type: 'bird',
-    description: 'Specialized aviary care for all bird species. Spacious flight cages, natural perches, and expert avian staff.',
-    address_line1: '890 Skyview Drive',
-    address_line2: 'Unit A',
-    city: 'Chicago',
-    state: 'IL',
-    zip_code: '60601',
-    latitude: '41.8781',
-    longitude: '-87.6298',
-    primary_contact: '(773) 555-0123',
-    email: 'care@featheredfriends.com',
-    website: '',
-    daily_capacity: '12',
-    total_capacity: '20',
-    price_per_day: '28',
-    service_radius: '8',
-    registration_license: 'PET-2026-IL-0009',
-    has_license_proof: true,
-    amenities: ['AC', 'CCTV'],
-    opening_time: '07:00',
-    closing_time: '19:00',
-    is_active: '0',
-    created_at: '2026-05-25',
-    property_type: 'commercial',
-    fencing_status: 'Indoor Only Facility',
-    supervision_level: 'Daytime Only',
-    accepted_pet_types: ['Bird'],
-    size_restrictions: ['All Sizes Welcome'],
-    age_preferences: ['All Ages Welcome'],
-    vaccination_policy: 'Recommended',
-    required_vaccines: [],
-    boarding_services: ['Overnight Boarding', 'Day Care', 'Training'],
-    special_instructions: 'Climate-controlled aviary environment. Please bring your bird\'s regular food and treats. We supplement with fresh fruits and vegetables daily. No birds with contagious conditions accepted.',
-  },
-};
-
-function getMockCenter(id: string): CenterDetail {
-  return (
-    mockCenters[id] ?? {
-      id,
-      center_name: 'Unknown Center',
-      center_type: 'pet',
-      description: '',
-      address_line1: '',
-      address_line2: '',
-      city: '',
-      state: '',
-      zip_code: '',
-      latitude: '',
-      longitude: '',
-      primary_contact: '',
-      email: '',
-      website: '',
-      daily_capacity: '0',
-      total_capacity: '0',
-      price_per_day: '0',
-      service_radius: '0',
-      registration_license: '',
-      has_license_proof: false,
-      amenities: [],
-      opening_time: '09:00',
-      closing_time: '18:00',
-      is_active: '0',
-      created_at: new Date().toISOString().slice(0, 10),
-      property_type: 'commercial',
-      fencing_status: '',
-      supervision_level: '',
-      accepted_pet_types: [],
-      size_restrictions: [],
-      age_preferences: [],
-      vaccination_policy: '',
-      required_vaccines: [],
-      boarding_services: [],
-      special_instructions: '',
-    }
-  );
 }
 
 // ─── Icon + label configs ─────────────────────────────────────────────────────
@@ -253,6 +55,7 @@ const typeIcon: Record<string, React.ReactNode> = {
   cat: <Cat size={18} />,
   bird: <Bird size={18} />,
   fish: <Fish size={18} />,
+  both: <PawPrint size={18} />,
   pet: <Building2 size={18} />,
 };
 
@@ -261,6 +64,7 @@ const typeLabel: Record<string, string> = {
   cat: 'Cat Boarding',
   bird: 'Bird Boarding',
   fish: 'Fish Boarding',
+  both: 'Dog & Cat Boarding',
   pet: 'All Pets',
 };
 
@@ -269,8 +73,18 @@ const typeColor: Record<string, string> = {
   cat: 'bg-violet-100 text-violet-700 border-violet-200',
   bird: 'bg-amber-100 text-amber-700 border-amber-200',
   fish: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  both: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   pet: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 };
+
+function centerTypeMeta(type: string) {
+  const key = type.toLowerCase();
+  return {
+    icon: typeIcon[key] ?? <Building2 size={18} />,
+    label: typeLabel[key] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    color: typeColor[key] ?? 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+}
 
 const amenityIcons: Record<string, React.ReactNode> = {
   AC: <Wind size={14} />,
@@ -325,6 +139,7 @@ function StatMini({ icon, label, value, unit }: { icon: React.ReactNode; label: 
 }
 
 function TimeChip({ time }: { time: string }) {
+  if (!time) return null;
   const h = parseInt(time.split(':')[0]!);
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
@@ -378,13 +193,6 @@ function DesktopLeftSkeleton() {
   );
 }
 
-// ─── Gallery placeholder images ────────────────────────────────────────────────
-
-const galleryImages = Array.from({ length: 6 }, (_, i) => ({
-  id: `img-${i + 1}`,
-  label: `Gallery Image ${i + 1}`,
-}));
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CenterDetailsPage({
@@ -394,6 +202,7 @@ export default function CenterDetailsPage({
   onNavigateCenters,
 }: CenterDetailsPageProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [center, setCenter] = useState<CenterDetail | null>(null);
   const [approveOpen, setApproveOpen] = useState(false);
   const [suspendOpen, setSuspendOpen] = useState(false);
@@ -401,12 +210,24 @@ export default function CenterDetailsPage({
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    const t = setTimeout(() => {
-      setCenter(getMockCenter(centerId));
-      setLoading(false);
-    }, 1100);
-    return () => clearTimeout(t);
+    setError('');
+    fetchCenterById(centerId)
+      .then((data) => {
+        if (!cancelled) setCenter(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load center details');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [centerId]);
 
   function mockApprove(): Promise<void> {
@@ -422,12 +243,29 @@ export default function CenterDetailsPage({
   }
 
   function formatCurrency(v: string) {
-    return `$${parseInt(v).toLocaleString()}`;
+    if (!v) return '—';
+    const num = parseFloat(v);
+    if (Number.isNaN(num)) return '—';
+    return `$${num.toLocaleString()}`;
   }
 
   const isActive = center?.is_active === '1';
+  const typeMeta = center ? centerTypeMeta(center.center_type) : null;
+  const coverImage = center?.image_urls[0] ?? null;
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  if (!loading && error) {
+    return (
+      <div className="screen-enter space-y-5">
+        <Button variant="ghost" onClick={onBack} className="!px-4 !py-2.5 !text-sm">
+          <ArrowLeft size={15} />
+          Back
+        </Button>
+        <div className="bg-white rounded-xl border border-red-100 p-8 text-center">
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen-enter space-y-5">
@@ -490,8 +328,12 @@ export default function CenterDetailsPage({
             <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 p-5 flex flex-col text-center">
               {/* Image placeholder */}
               <div className="relative mb-4 mx-auto w-full">
-                <div className="aspect-[16/9] w-full rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                  <Building2 size={36} className="text-slate-400" />
+                <div className="aspect-[16/9] w-full rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden">
+                  {coverImage ? (
+                    <img src={coverImage} alt={center!.center_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 size={36} className="text-slate-400" />
+                  )}
                 </div>
                 {/* Status corner badge */}
                 <div className="absolute top-2 right-2">
@@ -504,12 +346,10 @@ export default function CenterDetailsPage({
 
               {/* Type badge */}
               <span
-                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                  typeColor[center!.center_type]
-                }`}
+                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${typeMeta!.color}`}
               >
-                {typeIcon[center!.center_type]}
-                {typeLabel[center!.center_type]}
+                {typeMeta!.icon}
+                {typeMeta!.label}
               </span>
             </div>
 
@@ -521,8 +361,13 @@ export default function CenterDetailsPage({
                 value={center!.total_capacity}
                 unit="spots"
               />
-              <StatMini icon={<DollarSign size={18} />} label="Price Per Day" value={center!.price_per_day} />
-              <StatMini icon={<Ruler size={18} />} label="Service Radius" value={center!.service_radius} unit="miles" />
+              <StatMini icon={<DollarSign size={18} />} label="Price Per Day" value={formatCurrency(center!.price_per_day)} />
+              <StatMini
+                icon={<Ruler size={18} />}
+                label="Service Radius"
+                value={center!.service_radius || '—'}
+                unit={center!.service_radius ? 'miles' : undefined}
+              />
             </div>
 
             {/* Member since */}
@@ -541,8 +386,12 @@ export default function CenterDetailsPage({
             <>
               {/* Mobile: inline profile header */}
               <div className="lg:hidden bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm p-4 space-y-4">
-                <div className="aspect-[16/9] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                  <Building2 size={32} className="text-slate-400" />
+                <div className="aspect-[16/9] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden">
+                  {coverImage ? (
+                    <img src={coverImage} alt={center!.center_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 size={32} className="text-slate-400" />
+                  )}
                 </div>
                 <div className="text-center">
                   <h2 className="text-base font-bold text-slate-900">{center!.center_name}</h2>
@@ -550,12 +399,10 @@ export default function CenterDetailsPage({
                   <div className="flex items-center justify-center gap-2 mt-2">
                     <StatusBadge status={isActive ? 'active' : 'suspended'} />
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                        typeColor[center!.center_type]
-                      }`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${typeMeta!.color}`}
                     >
-                      {typeIcon[center!.center_type]}
-                      {typeLabel[center!.center_type]}
+                      {typeMeta!.icon}
+                      {typeMeta!.label}
                     </span>
                   </div>
                 </div>
@@ -566,11 +413,11 @@ export default function CenterDetailsPage({
                     <p className="text-[10px] text-slate-400 mt-0.5">Capacity</p>
                   </div>
                   <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <p className="text-base font-bold text-slate-800">${center!.price_per_day}</p>
+                    <p className="text-base font-bold text-slate-800">{formatCurrency(center!.price_per_day)}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">Per Day</p>
                   </div>
                   <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <p className="text-base font-bold text-slate-800">{center!.service_radius} mi</p>
+                    <p className="text-base font-bold text-slate-800">{center!.service_radius ? `${center!.service_radius} mi` : '—'}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">Radius</p>
                   </div>
                 </div>
@@ -580,9 +427,9 @@ export default function CenterDetailsPage({
               <SectionCard icon={<Building2 size={16} />} title="Basic Information">
                 <DetailRow icon={<Building2 size={15} />} label="Center Name" value={center!.center_name} />
                 <DetailRow
-                  icon={typeIcon[center!.center_type]}
+                  icon={typeMeta!.icon}
                   label="Center Type"
-                  value={typeLabel[center!.center_type]}
+                  value={typeMeta!.label}
                 />
                 <DetailRow
                   icon={<FileText size={15} />}
@@ -659,18 +506,23 @@ export default function CenterDetailsPage({
                 />
                 <div className="pt-2">
                   <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2">License Proof</p>
-                  {center!.has_license_proof ? (
+                  {center!.license_proof_url ? (
                     <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/50 flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
                         <FileText size={22} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800">License Document</p>
-                        <p className="text-xs text-slate-500">PDF uploaded successfully</p>
+                        <p className="text-xs text-slate-500">Document uploaded</p>
                       </div>
-                      <button className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition-colors">
+                      <a
+                        href={center!.license_proof_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition-colors"
+                      >
                         View Document
-                      </button>
+                      </a>
                     </div>
                   ) : (
                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center text-center">
@@ -712,6 +564,7 @@ export default function CenterDetailsPage({
               </div>
 
               {/* SECTION 7: Operating Hours */}
+              {(center!.opening_time || center!.closing_time) && (
               <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
                 <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
                   <span className="text-sky-500">
@@ -721,18 +574,25 @@ export default function CenterDetailsPage({
                 </div>
                 <div className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-4">
+                    {center!.opening_time && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500 font-medium">Opening:</span>
                       <TimeChip time={center!.opening_time} />
                     </div>
+                    )}
+                    {center!.opening_time && center!.closing_time && (
                     <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                    )}
+                    {center!.closing_time && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500 font-medium">Closing:</span>
                       <TimeChip time={center!.closing_time} />
                     </div>
+                    )}
                   </div>
                 </div>
               </div>
+              )}
 
               {/* SECTION 9: Pet Boarding Information */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
@@ -792,11 +652,11 @@ export default function CenterDetailsPage({
                             key={type}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-200"
                           >
-                            {type === 'Dog' && <Dog size={14} />}
-                            {type === 'Cat' && <Cat size={14} />}
-                            {type === 'Bird' && <Bird size={14} />}
-                            {type === 'Fish' && <Fish size={14} />}
-                            {type === 'Small Pet' && <PawPrint size={14} />}
+                            {type.toLowerCase() === 'dog' && <Dog size={14} />}
+                            {type.toLowerCase() === 'cat' && <Cat size={14} />}
+                            {type.toLowerCase() === 'bird' && <Bird size={14} />}
+                            {type.toLowerCase() === 'fish' && <Fish size={14} />}
+                            {!['dog', 'cat', 'bird', 'fish'].includes(type.toLowerCase()) && <PawPrint size={14} />}
                             {type}
                           </span>
                         ))
@@ -944,23 +804,27 @@ export default function CenterDetailsPage({
                     </span>
                     <h3 className="text-sm font-semibold text-slate-700">Center Gallery</h3>
                   </div>
-                  <span className="text-xs text-slate-400">{galleryImages.length} images</span>
+                  <span className="text-xs text-slate-400">{center!.image_urls.length} images</span>
                 </div>
                 <div className="p-4">
+                  {center!.image_urls.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {galleryImages.map((img) => (
+                    {center!.image_urls.map((url) => (
                       <button
-                        key={img.id}
-                        onClick={() => setSelectedImg(img.id)}
+                        key={url}
+                        onClick={() => setSelectedImg(url)}
                         className="aspect-square rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center group relative overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                       >
-                        <Image size={24} className="text-slate-400" />
+                        <img src={url} alt="Center" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-sky-500/0 group-hover:bg-sky-500/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <Maximize2 size={20} className="text-sky-600" />
                         </div>
                       </button>
                     ))}
                   </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic text-center py-6">No gallery images uploaded.</p>
+                  )}
                 </div>
               </div>
             </>
@@ -983,12 +847,8 @@ export default function CenterDetailsPage({
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
-          <div className="max-w-2xl w-full aspect-video rounded-xl bg-slate-100 flex items-center justify-center animate-fade-in">
-            <div className="text-center">
-              <Image size={48} className="text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-500">Image preview placeholder</p>
-              <p className="text-xs text-slate-400 mt-1">ID: {selectedImg}</p>
-            </div>
+          <div className="max-w-4xl w-full max-h-[85vh] rounded-xl overflow-hidden animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedImg} alt="Center gallery" className="w-full h-full object-contain bg-slate-900" />
           </div>
         </div>
       )}

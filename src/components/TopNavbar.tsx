@@ -4,9 +4,10 @@ import { Menu, Search, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-
 interface TopNavbarProps {
   pageTitle: string;
   onMenuClick: () => void;
+  onLogout: () => void;
 }
 
-export default function TopNavbar({ pageTitle, onMenuClick }: TopNavbarProps) {
+export default function TopNavbar({ pageTitle, onMenuClick, onLogout }: TopNavbarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +85,13 @@ export default function TopNavbar({ pageTitle, onMenuClick }: TopNavbarProps) {
                     Settings
                   </button>
                   <div className="my-1 border-t border-slate-100" />
-                  <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
                     <LogOut size={15} />
                     Logout
                   </button>

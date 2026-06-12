@@ -1,48 +1,16 @@
-import { useState } from 'react';
-import { Search, Building2, Dog, Cat, Bird, Fish, MapPin, Grid3x3, DollarSign, Filter, X } from 'lucide-react';
-import Button from '../components/Button';
+import { useState, useEffect } from 'react';
+import { Search, Building2, Dog, Cat, Bird, Fish, MapPin, Grid3x3, DollarSign, Filter, X, PawPrint } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import CenterActionMenu from '../components/CenterActionMenu';
 import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Center {
-  id: string;
-  center_name: string;
-  center_type: 'dog' | 'cat' | 'bird' | 'fish' | 'pet';
-  city: string;
-  state: string;
-  total_capacity: string;
-  price_per_day: string;
-  is_active: '0' | '1';
-  created_at: string;
-}
+import Button from '../components/Button';
+import { fetchCenters, type BoardingCenter } from '../services/centers';
 
 interface ManageCentersPageProps {
   onViewCenter?: (id: string) => void;
 }
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const mockCenters: Center[] = [
-  { id: '7', center_name: 'Sunrise Pet Resort', center_type: 'dog', city: 'New York', state: 'NY', total_capacity: '50', price_per_day: '40', is_active: '1', created_at: '2026-05-27' },
-  { id: '8', center_name: 'Paws & Claws Haven', center_type: 'cat', city: 'Los Angeles', state: 'CA', total_capacity: '35', price_per_day: '35', is_active: '1', created_at: '2026-05-26' },
-  { id: '9', center_name: 'Feathered Friends Lodge', center_type: 'bird', city: 'Chicago', state: 'IL', total_capacity: '20', price_per_day: '28', is_active: '0', created_at: '2026-05-25' },
-  { id: '10', center_name: 'Aquatic Paradise', center_type: 'fish', city: 'Miami', state: 'FL', total_capacity: '45', price_per_day: '50', is_active: '1', created_at: '2026-05-24' },
-  { id: '11', center_name: 'Happy Tails Inn', center_type: 'dog', city: 'Seattle', state: 'WA', total_capacity: '60', price_per_day: '45', is_active: '1', created_at: '2026-05-23' },
-  { id: '12', center_name: 'Whisker Wonderland', center_type: 'cat', city: 'Boston', state: 'MA', total_capacity: '30', price_per_day: '32', is_active: '0', created_at: '2026-05-22' },
-  { id: '13', center_name: 'Pawsome Retreat', center_type: 'pet', city: 'Denver', state: 'CO', total_capacity: '70', price_per_day: '38', is_active: '1', created_at: '2026-05-21' },
-  { id: '14', center_name: 'Bark Boulevard', center_type: 'dog', city: 'Austin', state: 'TX', total_capacity: '55', price_per_day: '42', is_active: '1', created_at: '2026-05-20' },
-  { id: '15', center_name: 'Furry Friends Hotel', center_type: 'pet', city: 'Phoenix', state: 'AZ', total_capacity: '40', price_per_day: '36', is_active: '0', created_at: '2026-05-19' },
-  { id: '16', center_name: 'Cozy Critters Corner', center_type: 'cat', city: 'Portland', state: 'OR', total_capacity: '25', price_per_day: '30', is_active: '1', created_at: '2026-05-18' },
-  { id: '17', center_name: 'Wagging Tails Resort', center_type: 'dog', city: 'San Diego', state: 'CA', total_capacity: '80', price_per_day: '55', is_active: '1', created_at: '2026-05-17' },
-  { id: '18', center_name: 'Purrfect Stays', center_type: 'cat', city: 'Atlanta', state: 'GA', total_capacity: '28', price_per_day: '34', is_active: '1', created_at: '2026-05-16' },
-  { id: '19', center_name: 'Tweety Suites', center_type: 'bird', city: 'Dallas', state: 'TX', total_capacity: '18', price_per_day: '26', is_active: '0', created_at: '2026-05-15' },
-  { id: '20', center_name: 'Fin Friends Spa', center_type: 'fish', city: 'Tampa', state: 'FL', total_capacity: '32', price_per_day: '48', is_active: '1', created_at: '2026-05-14' },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +19,7 @@ const typeIcon: Record<string, React.ReactNode> = {
   cat: <Cat size={15} />,
   bird: <Bird size={15} />,
   fish: <Fish size={15} />,
+  both: <PawPrint size={15} />,
   pet: <Building2 size={15} />,
 };
 
@@ -59,6 +28,7 @@ const typeLabel: Record<string, string> = {
   cat: 'Cat',
   bird: 'Bird',
   fish: 'Fish',
+  both: 'Dog & Cat',
   pet: 'All Pets',
 };
 
@@ -67,16 +37,29 @@ const typeColor: Record<string, string> = {
   cat: 'bg-violet-100 text-violet-700 border-violet-200',
   bird: 'bg-amber-100 text-amber-700 border-amber-200',
   fish: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  both: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   pet: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 };
+
+function centerTypeMeta(type: string) {
+  const key = type.toLowerCase();
+  return {
+    icon: typeIcon[key] ?? <Building2 size={15} />,
+    label: typeLabel[key] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    color: typeColor[key] ?? 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+}
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function formatCurrency(value: string) {
-  return `$${parseInt(value).toLocaleString()}`;
+function formatCurrency(value: string | null) {
+  if (!value) return '—';
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) return '—';
+  return `$${num.toLocaleString()}`;
 }
 
 function formatCapacity(value: string) {
@@ -88,20 +71,42 @@ function formatCapacity(value: string) {
 
 export default function ManageCentersPage({ onViewCenter }: ManageCentersPageProps) {
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [centers, setCenters] = useState<BoardingCenter[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const itemsPerPage = 10;
 
-  // Filter logic
-  const filtered = mockCenters.filter((c) => {
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    fetchCenters()
+      .then((data) => {
+        if (!cancelled) setCenters(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load centers');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = centers.filter((c) => {
     const matchesSearch =
       c.center_name.toLowerCase().includes(search.toLowerCase()) ||
       c.city.toLowerCase().includes(search.toLowerCase()) ||
       c.state.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' || c.center_type === typeFilter;
+    const matchesType = typeFilter === 'all' || c.center_type.toLowerCase() === typeFilter;
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'active' && c.is_active === '1') ||
@@ -205,6 +210,7 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                   <option value="cat">Cat</option>
                   <option value="bird">Bird</option>
                   <option value="fish">Fish</option>
+                  <option value="both">Dog & Cat</option>
                   <option value="pet">All Pets</option>
                 </select>
               </div>
@@ -245,9 +251,26 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
           <div className="p-4">
             <TableSkeleton rows={5} columns={9} />
           </div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-red-600 font-medium">{error}</p>
+            <Button
+              variant="ghost"
+              className="mt-4"
+              onClick={() => {
+                setLoading(true);
+                setError('');
+                fetchCenters()
+                  .then(setCenters)
+                  .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load centers'))
+                  .finally(() => setLoading(false));
+              }}
+            >
+              Retry
+            </Button>
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={<Building2 size={40} />}
             title={search || activeFilters > 0 ? 'No matching centers' : 'No centers yet'}
             message={
               search || activeFilters > 0
@@ -277,7 +300,9 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
-                  {paginated.map((center) => (
+                  {paginated.map((center) => {
+                    const typeMeta = centerTypeMeta(center.center_type);
+                    return (
                     <tr
                       key={center.id}
                       className="bg-white hover:bg-slate-50/50 transition-colors group"
@@ -293,12 +318,10 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
-                            typeColor[center.center_type]
-                          }`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${typeMeta.color}`}
                         >
-                          {typeIcon[center.center_type]}
-                          {typeLabel[center.center_type]}
+                          {typeMeta.icon}
+                          {typeMeta.label}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-600">
@@ -321,7 +344,8 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                         />
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -329,7 +353,9 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
             {/* ── Tablet view (md) ── */}
             <div className="hidden md:block lg:hidden">
               <div className="grid grid-cols-2 gap-3 p-4">
-                {paginated.map((center) => (
+                {paginated.map((center) => {
+                  const typeMeta = centerTypeMeta(center.center_type);
+                  return (
                   <div
                     key={center.id}
                     className="bg-white/90 border border-slate-100 rounded-xl p-4 space-y-3 hover:shadow-md hover:border-slate-200 transition-all group"
@@ -340,12 +366,10 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[11px] font-medium text-slate-400">#{center.id}</span>
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
-                              typeColor[center.center_type]
-                            }`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${typeMeta.color}`}
                           >
-                            {typeIcon[center.center_type]}
-                            {typeLabel[center.center_type]}
+                            {typeMeta.icon}
+                            {typeMeta.label}
                           </span>
                         </div>
                         <h3 className="text-sm font-semibold text-slate-800 truncate">{center.center_name}</h3>
@@ -380,13 +404,16 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                       />
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
             </div>
 
             {/* ── Mobile cards ── */}
             <div className="md:hidden divide-y divide-slate-100">
-              {paginated.map((center) => (
+              {paginated.map((center) => {
+                const typeMeta = centerTypeMeta(center.center_type);
+                return (
                 <div key={center.id} className="p-4 space-y-3">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3">
@@ -414,12 +441,10 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                   {/* Location + Type row */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
-                        typeColor[center.center_type]
-                      }`}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${typeMeta.color}`}
                     >
-                      {typeIcon[center.center_type]}
-                      {typeLabel[center.center_type]}
+                      {typeMeta.icon}
+                      {typeMeta.label}
                     </span>
                     <span className="text-slate-300">·</span>
                     <span className="inline-flex items-center gap-1 text-xs text-slate-600">
@@ -443,7 +468,8 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
                     <StatusBadge status={center.is_active === '1' ? 'active' : 'suspended'} />
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
 
             {/* ── Pagination ── */}

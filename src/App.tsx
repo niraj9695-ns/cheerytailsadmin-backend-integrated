@@ -9,23 +9,34 @@ import OwnerDetailsPage from './screens/OwnerDetailsPage';
 import ManageCentersPage from './screens/ManageCentersPage';
 import CenterDetailsPage from './screens/CenterDetailsPage';
 import { NavItemKey } from './components/Sidebar';
+import { useAuth } from './context/AuthContext';
 
 type Screen = 'login' | 'otp' | 'dashboard';
 type OwnersSubPage = 'list' | 'create' | 'view';
 type CentersSubPage = 'list' | 'view';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('login');
+  const { isAuthenticated, logout } = useAuth();
+  const [screen, setScreen] = useState<Screen>(() => (isAuthenticated ? 'dashboard' : 'login'));
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [activeNav, setActiveNav] = useState<NavItemKey>('dashboard');
   const [ownersSubPage, setOwnersSubPage] = useState<OwnersSubPage>('list');
   const [viewOwnerId, setViewOwnerId] = useState<string>('');
   const [centersSubPage, setCentersSubPage] = useState<CentersSubPage>('list');
   const [viewCenterId, setViewCenterId] = useState<string>('');
 
-  function handleSendOTP(email: string) {
+  function handleSendOTP(email: string, password: string) {
     setAdminEmail(email);
+    setAdminPassword(password);
     setScreen('otp');
+  }
+
+  function handleLogout() {
+    logout();
+    setAdminEmail('');
+    setAdminPassword('');
+    setScreen('login');
   }
 
   function handleNavChange(key: NavItemKey) {
@@ -62,14 +73,21 @@ export default function App() {
     return (
       <OTPVerification
         email={adminEmail}
-        onBack={() => setScreen('login')}
-        onVerified={() => setScreen('dashboard')}
+        password={adminPassword}
+        onBack={() => {
+          setAdminPassword('');
+          setScreen('login');
+        }}
+        onVerified={() => {
+          setAdminPassword('');
+          setScreen('dashboard');
+        }}
       />
     );
   }
 
   return (
-    <DashboardLayout activeItem={activeNav} onNavigate={handleNavChange}>
+    <DashboardLayout activeItem={activeNav} onNavigate={handleNavChange} onLogout={handleLogout}>
       {activeNav === 'dashboard' && <DashboardPage />}
 
       {activeNav === 'owners' && ownersSubPage === 'list' && (

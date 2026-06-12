@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowLeft, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import Logo from '../components/Logo';
 import Button from '../components/Button';
+import { useAuth } from '../context/AuthContext';
 
 interface OTPVerificationProps {
   email: string;
+  password: string;
   onBack: () => void;
   onVerified: () => void;
 }
@@ -14,7 +16,8 @@ const RESEND_COUNTDOWN = 60;
 
 type StatusType = 'idle' | 'success' | 'error';
 
-export default function OTPVerification({ email, onBack, onVerified }: OTPVerificationProps) {
+export default function OTPVerification({ email, password, onBack, onVerified }: OTPVerificationProps) {
+  const { verifyOtp, resendOtp } = useAuth();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
@@ -89,7 +92,7 @@ export default function OTPVerification({ email, onBack, onVerified }: OTPVerifi
     inputRefs.current[nextFocus]?.focus();
   }
 
-  function handleVerify(e: React.FormEvent) {
+  async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     const code = otp.join('');
     if (code.length < OTP_LENGTH) {
@@ -99,28 +102,36 @@ export default function OTPVerification({ email, onBack, onVerified }: OTPVerifi
     }
     setVerifying(true);
     setStatus('idle');
-    // Simulate verification — replace with real API call later
-    setTimeout(() => {
+    try {
+      await verifyOtp(email, code);
       setVerifying(false);
-      // For UI demo: any complete OTP succeeds
       setStatus('success');
       setStatusMsg('OTP verified successfully! Redirecting…');
       setTimeout(() => onVerified(), 1200);
-    }, 1500);
+    } catch (err) {
+      setVerifying(false);
+      setStatus('error');
+      setStatusMsg(err instanceof Error ? err.message : 'Invalid OTP. Please try again.');
+    }
   }
 
-  function handleResend() {
+  async function handleResend() {
     if (countdown > 0 || resending) return;
     setResending(true);
     setOtp(Array(OTP_LENGTH).fill(''));
     setStatus('idle');
+    setStatusMsg('');
     inputRefs.current[0]?.focus();
-    setTimeout(() => {
-      setResending(false);
-      setStatus('idle');
-      setStatusMsg('');
+    try {
+      const newOtp = await resendOtp(email, password);
+      console.log('Login OTP:', newOtp);
       startCountdown();
-    }, 1000);
+    } catch (err) {
+      setStatus('error');
+      setStatusMsg(err instanceof Error ? err.message : 'Failed to resend OTP.');
+    } finally {
+      setResending(false);
+    }
   }
 
   const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, (_, a, b, c) => a + '*'.repeat(b.length) + c);
