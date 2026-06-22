@@ -132,7 +132,7 @@ export default function CreateOwnerPage({
               onClick={onNavigateOwners}
               className="hover:text-sky-500 transition-colors focus:outline-none focus-visible:underline"
             >
-              Manage Owners
+              Manage Pet Owner
             </button>
             <ChevronRight size={12} className="text-slate-300" />
             <span className="text-slate-600 font-medium">Create Owner</span>

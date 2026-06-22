@@ -1,7 +1,7 @@
-import { X, LayoutDashboard, Users, Building2 } from 'lucide-react';
+import { X, LayoutDashboard, Users, Home, Building2 } from 'lucide-react';
 import Logo from './Logo';
 
-export type NavItemKey = 'dashboard' | 'owners' | 'centers';
+export type NavItemKey = 'dashboard' | 'owners' | 'boardingOwners' | 'centers';
 
 interface NavItem {
   key: NavItemKey;
@@ -11,7 +11,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { key: 'owners', label: 'Manage Owners', icon: <Users size={18} /> },
+  { key: 'owners', label: 'Manage Pet Owner', icon: <Users size={18} /> },
+  { key: 'boardingOwners', label: 'Manage Boarding Owners', icon: <Home size={18} /> },
   { key: 'centers', label: 'Manage Centers', icon: <Building2 size={18} /> },
 ];
 

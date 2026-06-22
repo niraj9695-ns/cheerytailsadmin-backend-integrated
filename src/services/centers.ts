@@ -12,7 +12,8 @@ export interface BoardingCenter {
   longitude: string | null;
   center_type: string;
   description: string | null;
-  images: string | null;
+  images?: string[] | string | null;
+  center_photos?: string[] | string | null;
   price_per_day: string | null;
   daily_capacity: string;
   is_active: '0' | '1';
@@ -23,7 +24,7 @@ export interface BoardingCenter {
   license_proof: string | null;
   service_area_radius: string | null;
   total_capacity: string;
-  amenities: string | null;
+  amenities: string[] | string | null;
   opening_time: string | null;
   closing_time: string | null;
   primary_contact_number: string | null;
@@ -32,13 +33,19 @@ export interface BoardingCenter {
   property_type: string | null;
   fencing_status: string | null;
   supervision_level: string | null;
-  accepted_pet_types: string | null;
-  size_weight_restrictions: string | null;
-  age_preferences: string | null;
+  accepted_pet_types: string[] | string | null;
+  size_weight_restrictions: string[] | string | null;
+  age_preferences: string[] | string | null;
   vaccination_policy: string | null;
-  required_vaccines: string | null;
-  boarding_services: string | null;
+  required_vaccines: string[] | string | null;
+  boarding_services: string[] | string | null;
   special_instructions: string | null;
+  insurance_provider_name?: string | null;
+  insurance_policy_number?: string | null;
+  insurance_expiry_date?: string | null;
+  vet_clinic_name?: string | null;
+  vet_clinic_address?: string | null;
+  vet_clinic_contact?: string | null;
 }
 
 export interface CenterDetail {
@@ -77,17 +84,32 @@ export interface CenterDetail {
   required_vaccines: string[];
   boarding_services: string[];
   special_instructions: string;
+  insurance_provider: string;
+  insurance_policy_number: string;
+  insurance_expiry_date: string;
+  vet_clinic_name: string;
+  vet_clinic_address: string;
+  vet_clinic_contact: string;
   image_urls: string[];
 }
 
-function parseJsonArray(value: string | null | undefined): string[] {
+function parseJsonArray(value: string[] | string | null | undefined): string[] {
   if (!value) return [];
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
-    return [];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [trimmed];
   }
+  return [];
 }
 
 function formatTime(time: string | null): string {
@@ -136,7 +158,13 @@ export function mapToCenterDetail(raw: BoardingCenter): CenterDetail {
     required_vaccines: parseJsonArray(raw.required_vaccines),
     boarding_services: parseJsonArray(raw.boarding_services),
     special_instructions: raw.special_instructions ?? '',
-    image_urls: parseJsonArray(raw.images)
+    insurance_provider: raw.insurance_provider_name ?? '',
+    insurance_policy_number: raw.insurance_policy_number ?? '',
+    insurance_expiry_date: raw.insurance_expiry_date ?? '',
+    vet_clinic_name: raw.vet_clinic_name ?? '',
+    vet_clinic_address: raw.vet_clinic_address ?? '',
+    vet_clinic_contact: raw.vet_clinic_contact ?? '',
+    image_urls: parseJsonArray(raw.center_photos ?? raw.images)
       .map((path) => assetUrl(path))
       .filter((url): url is string => Boolean(url)),
   };
@@ -144,6 +172,15 @@ export function mapToCenterDetail(raw: BoardingCenter): CenterDetail {
 
 export async function fetchCenters(): Promise<BoardingCenter[]> {
   const res = await apiRequest<BoardingCenter[]>('/api/admin/boarding-centers/list', {}, true);
+  return res.data;
+}
+
+export async function fetchCentersByOwner(ownerId: string): Promise<BoardingCenter[]> {
+  const res = await apiRequest<BoardingCenter[]>(
+    `/api/admin/boarding-centers/by-owner/${ownerId}`,
+    {},
+    true,
+  );
   return res.data;
 }
 

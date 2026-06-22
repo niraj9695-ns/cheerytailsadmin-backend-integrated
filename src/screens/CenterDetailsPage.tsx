@@ -35,6 +35,13 @@ import {
   PawPrint,
   Weight,
   ClipboardList,
+  FileCheck,
+  AlertTriangle,
+  ShieldCheck,
+  Eye,
+  Download,
+  Landmark,
+  Stethoscope,
 } from 'lucide-react';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
@@ -43,6 +50,7 @@ import { fetchCenterById, type CenterDetail } from '../services/centers';
 
 interface CenterDetailsPageProps {
   centerId: string;
+  listLabel?: string;
   onBack: () => void;
   onNavigateDashboard: () => void;
   onNavigateCenters: () => void;
@@ -197,6 +205,7 @@ function DesktopLeftSkeleton() {
 
 export default function CenterDetailsPage({
   centerId,
+  listLabel = 'Manage Centers',
   onBack,
   onNavigateDashboard,
   onNavigateCenters,
@@ -239,14 +248,17 @@ export default function CenterDetailsPage({
   }
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    if (!d || d === '0000-00-00') return '—';
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return d;
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   }
 
   function formatCurrency(v: string) {
     if (!v) return '—';
     const num = parseFloat(v);
     if (Number.isNaN(num)) return '—';
-    return `$${num.toLocaleString()}`;
+    return `₹${num.toLocaleString()}`;
   }
 
   const isActive = center?.is_active === '1';
@@ -278,7 +290,7 @@ export default function CenterDetailsPage({
             </button>
             <ChevronRight size={12} className="text-slate-300" />
             <button onClick={onNavigateCenters} className="hover:text-sky-500 transition-colors">
-              Manage Centers
+              {listLabel}
             </button>
             <ChevronRight size={12} className="text-slate-300" />
             <span className="text-slate-600 font-medium">
@@ -794,6 +806,150 @@ export default function CenterDetailsPage({
                   </div>
                 </div>
               </div>
+
+              {/* SECTION 9: Documents */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
+                <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+                  <span className="text-sky-500">
+                    <FileCheck size={16} />
+                  </span>
+                  <h3 className="text-sm font-semibold text-slate-700">Documents</h3>
+                </div>
+                <div className="p-5 space-y-4">
+                  {/* License Proof Card */}
+                  <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/30 hover:border-slate-200 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-20 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                        {center!.license_proof_url ? (
+                          <FileText size={28} className="text-slate-400" />
+                        ) : (
+                          <AlertTriangle size={28} className="text-amber-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                              <ShieldCheck size={14} className="text-emerald-500" />
+                              License Proof
+                            </h4>
+                            {center!.license_proof_url ? (
+                              <p className="text-xs text-slate-500 mt-0.5 truncate">License document uploaded</p>
+                            ) : (
+                              <p className="text-xs text-amber-600 mt-1">Document not uploaded</p>
+                            )}
+                          </div>
+                          {center!.license_proof_url ? (
+                            <div className="flex items-center gap-2 shrink-0">
+                              <a
+                                href={center!.license_proof_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-sky-600 hover:bg-sky-50 border border-sky-200 hover:border-sky-300 transition-colors"
+                              >
+                                <Eye size={13} />
+                                Preview
+                              </a>
+                              <a
+                                href={center!.license_proof_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 transition-colors"
+                              >
+                                <Download size={13} />
+                                Download
+                              </a>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Insurance Information Card */}
+                  <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/30 hover:border-slate-200 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-20 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center shrink-0">
+                        <Landmark size={28} className="text-emerald-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                          <Shield size={14} className="text-emerald-500" />
+                          Insurance Information
+                        </h4>
+                        {center!.insurance_provider ? (
+                          <div className="mt-2 space-y-1.5">
+                            <p className="text-xs text-slate-600">
+                              <span className="font-medium text-slate-500">Provider:</span>{' '}
+                              {center!.insurance_provider}
+                            </p>
+                            <p className="text-xs text-slate-600">
+                              <span className="font-medium text-slate-500">Policy:</span>{' '}
+                              <span className="font-mono">{center!.insurance_policy_number || '—'}</span>
+                            </p>
+                            {center!.insurance_expiry_date && (
+                              <p className="text-xs text-slate-600 flex items-center gap-1">
+                                <span className="font-medium text-slate-500">Expires:</span>{' '}
+                                {formatDate(center!.insurance_expiry_date)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                            <AlertTriangle size={12} className="text-amber-400" />
+                            Insurance information not provided
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Veterinary Information Card */}
+                  <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/30 hover:border-slate-200 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-20 rounded-lg bg-gradient-to-br from-sky-50 to-blue-100 flex items-center justify-center shrink-0">
+                        <Stethoscope size={28} className="text-sky-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                          <Heart size={14} className="text-sky-500" />
+                          Veterinary Information
+                        </h4>
+                        {center!.vet_clinic_name ? (
+                          <div className="mt-2 space-y-1.5">
+                            <p className="text-xs text-slate-600">
+                              <span className="font-medium text-slate-500">Clinic:</span>{' '}
+                              {center!.vet_clinic_name}
+                            </p>
+                            {center!.vet_clinic_address && (
+                              <p className="text-xs text-slate-600 flex items-start gap-1">
+                                <MapPin size={12} className="text-slate-400 shrink-0 mt-0.5" />
+                                <span>{center!.vet_clinic_address}</span>
+                              </p>
+                            )}
+                            {center!.vet_clinic_contact && (
+                              <p className="text-xs text-slate-600 flex items-center gap-1">
+                                <Phone size={12} className="text-slate-400" />
+                                <span>{center!.vet_clinic_contact}</span>
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                            <AlertTriangle size={12} className="text-amber-400" />
+                            Veterinary information not provided
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
               {/* SECTION 8: Center Gallery */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">

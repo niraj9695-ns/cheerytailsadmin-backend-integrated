@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Eye, CheckCircle, Trash2 } from 'lucide-react';
+import { MoreVertical, Eye, CheckCircle, Trash2, Building2 } from 'lucide-react';
 
 interface ActionItem {
   label: string;
@@ -10,11 +10,12 @@ interface ActionItem {
 
 interface ActionMenuProps {
   onView?: () => void;
+  onViewCenters?: () => void;
   onApprove?: () => void;
   onDelete?: () => void;
 }
 
-export default function ActionMenu({ onView, onApprove, onDelete }: ActionMenuProps) {
+export default function ActionMenu({ onView, onViewCenters, onApprove, onDelete }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +32,16 @@ export default function ActionMenu({ onView, onApprove, onDelete }: ActionMenuPr
   const actions: ActionItem[] = [
     ...(onView
       ? [{ label: 'View Owner', icon: <Eye size={15} />, onClick: onView, variant: 'default' as const }]
+      : []),
+    ...(onViewCenters
+      ? [
+          {
+            label: 'View Centers',
+            icon: <Building2 size={15} />,
+            onClick: onViewCenters,
+            variant: 'default' as const,
+          },
+        ]
       : []),
     ...(onApprove
       ? [
@@ -67,7 +78,7 @@ export default function ActionMenu({ onView, onApprove, onDelete }: ActionMenuPr
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-40 origin-top-right animate-fade-in">
+        <div className="absolute right-0 z-20 mt-1 w-44 origin-top-right animate-fade-in">
           <div className="rounded-lg bg-white shadow-lg shadow-slate-200/60 border border-slate-100 py-1">
             {actions.map((action) => (
               <button

@@ -4,7 +4,8 @@ import TopNavbar from './TopNavbar';
 
 const pageTitles: Record<NavItemKey, string> = {
   dashboard: 'Dashboard',
-  owners: 'Manage Owners',
+  owners: 'Manage Pet Owner',
+  boardingOwners: 'Manage Boarding Owners',
   centers: 'Manage Centers',
 };
 

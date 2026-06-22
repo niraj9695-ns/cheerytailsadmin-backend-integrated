@@ -59,7 +59,7 @@ export default function DashboardPage() {
         <StatCard
           icon={<TrendingUp size={18} />}
           label="Monthly Revenue"
-          value="$82.4K"
+          value="₹82.4K"
           trend="+8.2%"
           trendUp
         />

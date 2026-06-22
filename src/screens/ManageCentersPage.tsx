@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Building2, Dog, Cat, Bird, Fish, MapPin, Grid3x3, DollarSign, Filter, X, PawPrint } from 'lucide-react';
+import { Search, Building2, Dog, Cat, Bird, Fish, MapPin, Grid3x3, DollarSign, Filter, X, PawPrint, ArrowLeft } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import CenterActionMenu from '../components/CenterActionMenu';
 import Pagination from '../components/Pagination';
@@ -9,7 +9,11 @@ import Button from '../components/Button';
 import { fetchCenters, type BoardingCenter } from '../services/centers';
 
 interface ManageCentersPageProps {
+  title?: string;
+  subtitle?: string;
+  fetchList?: () => Promise<BoardingCenter[]>;
   onViewCenter?: (id: string) => void;
+  onBack?: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,7 +63,7 @@ function formatCurrency(value: string | null) {
   if (!value) return '—';
   const num = parseFloat(value);
   if (Number.isNaN(num)) return '—';
-  return `$${num.toLocaleString()}`;
+  return `₹${num.toLocaleString()}`;
 }
 
 function formatCapacity(value: string) {
@@ -69,7 +73,13 @@ function formatCapacity(value: string) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ManageCentersPage({ onViewCenter }: ManageCentersPageProps) {
+export default function ManageCentersPage({
+  title = 'Manage Centers',
+  subtitle = 'Manage, review and monitor all registered boarding centers.',
+  fetchList = fetchCenters,
+  onViewCenter,
+  onBack,
+}: ManageCentersPageProps) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -84,7 +94,7 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
     let cancelled = false;
     setLoading(true);
     setError('');
-    fetchCenters()
+    fetchList()
       .then((data) => {
         if (!cancelled) setCenters(data);
       })
@@ -99,7 +109,7 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchList]);
 
   const filtered = centers.filter((c) => {
     const matchesSearch =
@@ -141,8 +151,17 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
       {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Manage Centers</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage, review and monitor all registered boarding centers.</p>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-sky-600 transition-colors mb-2"
+            >
+              <ArrowLeft size={15} />
+              Back to owners
+            </button>
+          )}
+          <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
         </div>
       </div>
 
@@ -260,7 +279,7 @@ export default function ManageCentersPage({ onViewCenter }: ManageCentersPagePro
               onClick={() => {
                 setLoading(true);
                 setError('');
-                fetchCenters()
+                fetchList()
                   .then(setCenters)
                   .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load centers'))
                   .finally(() => setLoading(false));

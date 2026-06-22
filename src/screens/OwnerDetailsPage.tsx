@@ -26,6 +26,7 @@ import { approveOwner, deleteOwner, fetchOwnerById, type Owner } from '../servic
 
 interface OwnerDetailsPageProps {
   ownerId: string;
+  listLabel?: string;
   onBack: () => void;
   onNavigateDashboard: () => void;
   onNavigateOwners: () => void;
@@ -118,6 +119,7 @@ function DesktopLeftSkeleton() {
 
 export default function OwnerDetailsPage({
   ownerId,
+  listLabel = 'Manage Pet Owner',
   onBack,
   onNavigateDashboard,
   onNavigateOwners,
@@ -198,7 +200,7 @@ export default function OwnerDetailsPage({
           <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-2" aria-label="Breadcrumb">
             <button onClick={onNavigateDashboard} className="hover:text-sky-500 transition-colors">Dashboard</button>
             <ChevronRight size={12} className="text-slate-300" />
-            <button onClick={onNavigateOwners} className="hover:text-sky-500 transition-colors">Manage Owners</button>
+            <button onClick={onNavigateOwners} className="hover:text-sky-500 transition-colors">{listLabel}</button>
             <ChevronRight size={12} className="text-slate-300" />
             <span className="text-slate-600 font-medium">
               {loading ? 'Loading…' : owner ? displayName(owner) : 'Owner Details'}

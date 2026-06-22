@@ -7,7 +7,7 @@ import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import ConfirmModal from '../components/ConfirmModal';
-import { approveOwner, deleteOwner, fetchOwners, type Owner } from '../services/owners';
+import { approveOwner, deleteOwner, type Owner } from '../services/owners';
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -24,11 +24,22 @@ function displayName(owner: Owner) {
 }
 
 interface ManageOwnersPageProps {
-  onCreateOwner: () => void;
+  title: string;
+  subtitle?: string;
+  fetchList: () => Promise<Owner[]>;
+  onCreateOwner?: () => void;
   onViewOwner: (id: string) => void;
+  onViewCenters?: (id: string) => void;
 }
 
-export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageOwnersPageProps) {
+export default function ManageOwnersPage({
+  title,
+  subtitle = 'Manage and monitor all registered owners.',
+  fetchList,
+  onCreateOwner,
+  onViewOwner,
+  onViewCenters,
+}: ManageOwnersPageProps) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,7 +53,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
     let cancelled = false;
     setLoading(true);
     setError('');
-    fetchOwners()
+    fetchList()
       .then((data) => {
         if (!cancelled) setOwners(data);
       })
@@ -57,7 +68,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchList]);
 
   const filtered = owners.filter((o) => {
     const name = displayName(o).toLowerCase();
@@ -88,13 +99,15 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
     <div className="screen-enter space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Manage Owners</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage and monitor all registered owners.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
         </div>
-        <Button className="shrink-0" onClick={onCreateOwner}>
-          <Plus size={17} />
-          Create Owner
-        </Button>
+        {onCreateOwner && (
+          <Button className="shrink-0" onClick={onCreateOwner}>
+            <Plus size={17} />
+            Create Owner
+          </Button>
+        )}
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
@@ -125,7 +138,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
               onClick={() => {
                 setLoading(true);
                 setError('');
-                fetchOwners()
+                fetchList()
                   .then(setOwners)
                   .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load owners'))
                   .finally(() => setLoading(false));
@@ -139,7 +152,8 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
             title={search ? 'No matching owners' : 'No owners yet'}
             message={search ? 'Try adjusting your search terms.' : 'Get started by creating your first owner.'}
             action={
-              !search && (
+              !search &&
+              onCreateOwner && (
                 <Button variant="primary" onClick={onCreateOwner}>
                   <UserPlus size={16} />
                   Create Owner
@@ -182,6 +196,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
                       <td className="px-2 py-3.5">
                         <ActionMenu
                           onView={() => handleView(owner.id)}
+                          onViewCenters={onViewCenters ? () => onViewCenters(owner.id) : undefined}
                           onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
                           onDelete={() => handleDelete(owner)}
                         />
@@ -202,6 +217,7 @@ export default function ManageOwnersPage({ onCreateOwner, onViewOwner }: ManageO
                     </div>
                     <ActionMenu
                       onView={() => handleView(owner.id)}
+                      onViewCenters={onViewCenters ? () => onViewCenters(owner.id) : undefined}
                       onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
                       onDelete={() => handleDelete(owner)}
                     />

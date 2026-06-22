@@ -18,9 +18,19 @@ export interface Owner {
   updated_at: string;
 }
 
-export async function fetchOwners(): Promise<Owner[]> {
-  const res = await adminApiRequest<Owner[]>('/api/admin/owners?role=pet_owner');
+export type OwnerRole = 'pet_owner' | 'boarding_owner';
+
+export async function fetchOwnersByRole(role: OwnerRole): Promise<Owner[]> {
+  const res = await adminApiRequest<Owner[]>(`/api/admin/owners?role=${role}`);
   return res.data;
+}
+
+export async function fetchOwners(): Promise<Owner[]> {
+  return fetchOwnersByRole('pet_owner');
+}
+
+export async function fetchBoardingOwners(): Promise<Owner[]> {
+  return fetchOwnersByRole('boarding_owner');
 }
 
 export async function fetchOwnerById(id: string): Promise<Owner> {
