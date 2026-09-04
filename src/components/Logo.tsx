@@ -18,7 +18,8 @@ export default function Logo({ size = 'md' }: LogoProps) {
         <ShieldCheck size={icon} className="text-white" />
       </div>
       <span className={`font-bold tracking-tight text-slate-800 ${text}`}>
-        Admin<span className="text-sky-500">Panel</span>
+        Cheery<span className="text-sky-500">Tails</span>
+        <span className="text-slate-500 font-semibold text-sm ml-1">Admin</span>
       </span>
     </div>
   );

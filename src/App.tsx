@@ -4,6 +4,7 @@ import OTPVerification from './screens/OTPVerification';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardPage from './screens/DashboardPage';
 import ManageOwnersPage from './screens/ManageOwnersPage';
+import BookingsPage from './screens/BookingsPage';
 import CreateOwnerPage from './screens/CreateOwnerPage';
 import OwnerDetailsPage from './screens/OwnerDetailsPage';
 import ManageCentersPage from './screens/ManageCentersPage';
@@ -15,7 +16,7 @@ import { useAuth } from './context/AuthContext';
 
 type Screen = 'login' | 'otp' | 'dashboard';
 type OwnersSubPage = 'list' | 'create' | 'view';
-type BoardingOwnersSubPage = 'list' | 'view' | 'centers' | 'centerView';
+type BoardingOwnersSubPage = 'list' | 'view' | 'centers' | 'centerView' | 'bookings';
 type CentersSubPage = 'list' | 'view';
 
 export default function App() {
@@ -23,24 +24,27 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(() => (isAuthenticated ? 'dashboard' : 'login'));
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [activeNav, setActiveNav] = useState<NavItemKey>('dashboard');
+  const [activeNav, setActiveNav] = useState<NavItemKey>('owners');
   const [ownersSubPage, setOwnersSubPage] = useState<OwnersSubPage>('list');
   const [viewOwnerId, setViewOwnerId] = useState<string>('');
   const [boardingOwnersSubPage, setBoardingOwnersSubPage] = useState<BoardingOwnersSubPage>('list');
   const [viewBoardingOwnerId, setViewBoardingOwnerId] = useState<string>('');
   const [boardingOwnerCentersId, setBoardingOwnerCentersId] = useState<string>('');
   const [viewBoardingOwnerCenterId, setViewBoardingOwnerCenterId] = useState<string>('');
+  const [boardingOwnerBookingsId, setBoardingOwnerBookingsId] = useState<string>('');
   const [centersSubPage, setCentersSubPage] = useState<CentersSubPage>('list');
   const [viewCenterId, setViewCenterId] = useState<string>('');
 
   function handleSendOTP(email: string, password: string) {
     setAdminEmail(email);
     setAdminPassword(password);
-    setScreen('otp');
+    setActiveNav('owners');
+    setOwnersSubPage('list');
+    setScreen('dashboard');
   }
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     setAdminEmail('');
     setAdminPassword('');
     setScreen('login');
@@ -83,6 +87,17 @@ export default function App() {
     setBoardingOwnersSubPage('centers');
   }
 
+  function handleViewBoardingOwnerBookings(ownerId: string) {
+    setActiveNav('boardingOwners');
+    setBoardingOwnerBookingsId(ownerId);
+    setBoardingOwnersSubPage('bookings');
+  }
+
+  function goToBoardingOwnerBookings() {
+    setActiveNav('boardingOwners');
+    setBoardingOwnersSubPage('bookings');
+  }
+
   function handleViewBoardingOwnerCenter(centerId: string) {
     setViewBoardingOwnerCenterId(centerId);
     setBoardingOwnersSubPage('centerView');
@@ -118,6 +133,8 @@ export default function App() {
         }}
         onVerified={() => {
           setAdminPassword('');
+          setActiveNav('owners');
+          setOwnersSubPage('list');
           setScreen('dashboard');
         }}
       />
@@ -172,6 +189,14 @@ export default function App() {
           listLabel="Manage Boarding Owners"
           onBack={goToBoardingOwnersList}
           onNavigateDashboard={() => handleNavChange('dashboard')}
+          onNavigateOwners={goToBoardingOwnersList}
+        />
+      )}
+
+      {activeNav === 'boardingOwners' && boardingOwnersSubPage === 'bookings' && (
+        <BookingsPage
+          ownerId={boardingOwnerBookingsId}
+          onBack={goToBoardingOwnersList}
           onNavigateOwners={goToBoardingOwnersList}
         />
       )}

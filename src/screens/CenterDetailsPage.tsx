@@ -827,41 +827,43 @@ export default function CenterDetailsPage({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                          <div className="min-w-0">
                             <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                               <ShieldCheck size={14} className="text-emerald-500" />
                               License Proof
                             </h4>
                             {center!.license_proof_url ? (
-                              <p className="text-xs text-slate-500 mt-0.5 truncate">License document uploaded</p>
+                              <p className="text-xs text-slate-500 mt-1.5 truncate">License document uploaded</p>
                             ) : (
                               <p className="text-xs text-amber-600 mt-1">Document not uploaded</p>
                             )}
+                            {center!.license_proof_url ? (
+                              <div className="mt-1.5">
+                                <a
+                                  href={center!.license_proof_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-sky-600 hover:bg-sky-50 border border-sky-200 hover:border-sky-300 transition-colors"
+                                >
+                                  <Eye size={13} />
+                                  Preview
+                                </a>
+                              </div>
+                            ) : null}
                           </div>
                           {center!.license_proof_url ? (
-                            <div className="flex items-center gap-2 shrink-0">
-                              <a
-                                href={center!.license_proof_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-sky-600 hover:bg-sky-50 border border-sky-200 hover:border-sky-300 transition-colors"
-                              >
-                                <Eye size={13} />
-                                Preview
-                              </a>
-                              <a
-                                href={center!.license_proof_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 transition-colors"
-                              >
-                                <Download size={13} />
-                                Download
-                              </a>
-                            </div>
+                            <a
+                              href={center!.license_proof_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 transition-colors shrink-0"
+                            >
+                              <Download size={13} />
+                              Download
+                            </a>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200 shrink-0">
                               Pending
                             </span>
                           )}
@@ -937,6 +939,7 @@ export default function CenterDetailsPage({
                                 <span>{center!.vet_clinic_contact}</span>
                               </p>
                             )}
+                            
                           </div>
                         ) : (
                           <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
@@ -949,6 +952,7 @@ export default function CenterDetailsPage({
                   </div>
                 </div>
               </div>
+
 
 
               {/* SECTION 8: Center Gallery */}

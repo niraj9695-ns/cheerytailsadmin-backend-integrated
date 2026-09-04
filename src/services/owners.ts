@@ -1,4 +1,5 @@
 import { adminApiRequest } from '../lib/api';
+import { showActionNotification } from '../lib/notifications';
 
 export interface Owner {
   id: string;
@@ -38,15 +39,23 @@ export async function fetchOwnerById(id: string): Promise<Owner> {
   return res.data;
 }
 
-export async function approveOwner(id: string): Promise<void> {
+export async function approveOwner(id: string, name?: string): Promise<void> {
   await adminApiRequest(`/api/admin/owners/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify({ status: 'approved' }),
   });
+
+  if (name) {
+    await showActionNotification('owner_approved', name);
+  }
 }
 
-export async function deleteOwner(id: string): Promise<void> {
+export async function deleteOwner(id: string, name?: string): Promise<void> {
   await adminApiRequest(`/api/admin/owners/${id}`, {
     method: 'DELETE',
   });
+
+  if (name) {
+    await showActionNotification('owner_deleted', name);
+  }
 }

@@ -7,6 +7,7 @@ import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/Button';
 import { fetchCenters, type BoardingCenter } from '../services/centers';
+import { showActionNotification } from '../lib/notifications';
 
 interface ManageCentersPageProps {
   title?: string;
@@ -133,12 +134,26 @@ export default function ManageCentersPage({
     onViewCenter?.(id);
   }
 
-  function handleApprove(id: string) {
-    console.log('Approve center:', id);
+  async function handleApprove(id: string, name: string) {
+    try {
+      const center = centers.find((item) => item.id === id);
+      if (!center) return;
+      setCenters((prev) => prev.map((item) => (item.id === id ? { ...item, is_active: '1' } : item)));
+      await showActionNotification('center_approved', name);
+    } catch (error) {
+      console.error('Failed to process center approval notification:', error);
+    }
   }
 
-  function handleSuspend(id: string) {
-    console.log('Suspend center:', id);
+  async function handleSuspend(id: string, name: string) {
+    try {
+      const center = centers.find((item) => item.id === id);
+      if (!center) return;
+      setCenters((prev) => prev.map((item) => (item.id === id ? { ...item, is_active: '0' } : item)));
+      await showActionNotification('center_suspended', name);
+    } catch (error) {
+      console.error('Failed to process center suspension notification:', error);
+    }
   }
 
   function clearFilters() {
@@ -357,8 +372,8 @@ export default function ManageCentersPage({
                       <td className="px-2 py-3.5">
                         <CenterActionMenu
                           onView={() => handleView(center.id)}
-                          onApprove={() => handleApprove(center.id)}
-                          onSuspend={() => handleSuspend(center.id)}
+                          onApprove={() => handleApprove(center.id, center.center_name)}
+                          onSuspend={() => handleSuspend(center.id, center.center_name)}
                           isActive={center.is_active === '1'}
                         />
                       </td>
@@ -417,8 +432,8 @@ export default function ManageCentersPage({
                       <span className="text-[11px] text-slate-400">Created {formatDate(center.created_at)}</span>
                       <CenterActionMenu
                         onView={() => handleView(center.id)}
-                        onApprove={() => handleApprove(center.id)}
-                        onSuspend={() => handleSuspend(center.id)}
+                        onApprove={() => handleApprove(center.id, center.center_name)}
+                        onSuspend={() => handleSuspend(center.id, center.center_name)}
                         isActive={center.is_active === '1'}
                       />
                     </div>
@@ -451,8 +466,8 @@ export default function ManageCentersPage({
                     </div>
                     <CenterActionMenu
                       onView={() => handleView(center.id)}
-                      onApprove={() => handleApprove(center.id)}
-                      onSuspend={() => handleSuspend(center.id)}
+                      onApprove={() => handleApprove(center.id, center.center_name)}
+                      onSuspend={() => handleSuspend(center.id, center.center_name)}
                       isActive={center.is_active === '1'}
                     />
                   </div>

@@ -80,7 +80,7 @@ function SidebarContent({
       {/* Footer */}
       <div className="px-5 py-4 border-t border-slate-100">
         <p className="text-xs text-slate-400 text-center">
-          © {new Date().getFullYear()} AdminPanel
+          © {new Date().getFullYear()} CheeryTails Admin
         </p>
       </div>
     </div>

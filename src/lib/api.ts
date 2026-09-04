@@ -1,5 +1,11 @@
-export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'https://www.cgpisoftware.com/cheerytail';
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ?? 'https://www.cheerytails.com/cheerytail';
+
+export const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+export const APP_URL = (import.meta.env.VITE_APP_URL ?? 'https://admin.cheerytails.com').replace(
+  /\/+$/,
+  '',
+);
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';

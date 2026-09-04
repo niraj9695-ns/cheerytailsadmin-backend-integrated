@@ -30,6 +30,7 @@ interface ManageOwnersPageProps {
   onCreateOwner?: () => void;
   onViewOwner: (id: string) => void;
   onViewCenters?: (id: string) => void;
+  onViewBookings?: (id: string) => void;
 }
 
 export default function ManageOwnersPage({
@@ -39,6 +40,7 @@ export default function ManageOwnersPage({
   onCreateOwner,
   onViewOwner,
   onViewCenters,
+  onViewBookings,
 }: ManageOwnersPageProps) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -95,6 +97,10 @@ export default function ManageOwnersPage({
     setDeleteTarget(owner);
   }
 
+  function handleViewBookings(owner: Owner) {
+    onViewBookings?.(owner.id);
+  }
+
   return (
     <div className="screen-enter space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -102,12 +108,12 @@ export default function ManageOwnersPage({
           <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
           <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
         </div>
-        {onCreateOwner && (
+        {/* {onCreateOwner && (
           <Button className="shrink-0" onClick={onCreateOwner}>
             <Plus size={17} />
             Create Owner
           </Button>
-        )}
+        )} */}
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm shadow-slate-200/40 overflow-hidden">
@@ -197,6 +203,7 @@ export default function ManageOwnersPage({
                         <ActionMenu
                           onView={() => handleView(owner.id)}
                           onViewCenters={onViewCenters ? () => onViewCenters(owner.id) : undefined}
+                          onViewBookings={onViewBookings ? () => handleViewBookings(owner) : undefined}
                           onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
                           onDelete={() => handleDelete(owner)}
                         />
@@ -218,6 +225,7 @@ export default function ManageOwnersPage({
                     <ActionMenu
                       onView={() => handleView(owner.id)}
                       onViewCenters={onViewCenters ? () => onViewCenters(owner.id) : undefined}
+                      onViewBookings={onViewBookings ? () => handleViewBookings(owner) : undefined}
                       onApprove={owner.email_verified !== '1' ? () => handleApprove(owner) : undefined}
                       onDelete={() => handleDelete(owner)}
                     />
@@ -252,8 +260,9 @@ export default function ManageOwnersPage({
         variant="approve"
         ownerName={approveTarget ? displayName(approveTarget) : ''}
         onConfirm={async () => {
-          const id = approveTarget!.id;
-          await approveOwner(id);
+          const owner = approveTarget!;
+          const id = owner.id;
+          await approveOwner(id, displayName(owner));
           setOwners((prev) =>
             prev.map((o) => (o.id === id ? { ...o, email_verified: '1' } : o)),
           );
@@ -266,8 +275,9 @@ export default function ManageOwnersPage({
         variant="delete"
         ownerName={deleteTarget ? displayName(deleteTarget) : ''}
         onConfirm={async () => {
-          const id = deleteTarget!.id;
-          await deleteOwner(id);
+          const owner = deleteTarget!;
+          const id = owner.id;
+          await deleteOwner(id, displayName(owner));
           setOwners((prev) => prev.filter((o) => o.id !== id));
         }}
         onClose={() => setDeleteTarget(null)}

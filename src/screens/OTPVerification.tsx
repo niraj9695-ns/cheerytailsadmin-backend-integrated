@@ -12,7 +12,7 @@ interface OTPVerificationProps {
 }
 
 const OTP_LENGTH = 6;
-const RESEND_COUNTDOWN = 60;
+const RESEND_COUNTDOWN = 600;
 
 type StatusType = 'idle' | 'success' | 'error';
 
@@ -265,7 +265,7 @@ export default function OTPVerification({ email, password, onBack, onVerified }:
 
         {/* Bottom badge */}
         <p className="mt-5 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} AdminPanel. All rights reserved.
+          © {new Date().getFullYear()} CheeryTails Admin. All rights reserved.
         </p>
       </div>
     </div>

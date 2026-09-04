@@ -8,7 +8,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<string>;
   verifyOtp: (email: string, otp: string) => Promise<void>;
   resendOtp: (email: string, password: string) => Promise<string>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -22,8 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: Boolean(token),
       async login(email, password) {
-        const otp = await authService.login(email, password);
-        return otp;
+        const { token: newToken, user: newUser } = await authService.login(email, password);
+        setToken(newToken);
+        setUser(newUser);
+        return newToken;
       },
       async verifyOtp(email, otp) {
         const { token: newToken, user: newUser } = await authService.verifyLoginOtp(email, otp);
@@ -34,8 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const otp = await authService.login(email, password);
         return otp;
       },
-      logout() {
-        authService.logout();
+      async logout() {
+        await authService.logout();
         setToken(null);
         setUser(null);
       },

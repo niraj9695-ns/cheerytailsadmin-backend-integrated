@@ -45,8 +45,7 @@ export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
     setLoading(true);
     setApiError('');
     try {
-      const otp = await login(email, password);
-      console.log('Login OTP:', otp);
+      await login(email, password);
       onSendOTP(email, password);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Login failed. Please try again.');
@@ -123,7 +122,6 @@ export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
               }
             />
 
-            {/* Forgot password placeholder */}
             <div className="flex justify-end -mt-1">
               <button
                 type="button"
@@ -143,19 +141,19 @@ export default function AdminLogin({ onSendOTP }: AdminLoginProps) {
             )}
 
             <Button type="submit" loading={loading} fullWidth className="mt-1">
-              {loading ? 'Sending OTP…' : 'Send OTP'}
+              {loading ? 'Signing in…' : 'Login'}
             </Button>
           </form>
 
           {/* Footer note */}
           <p className="mt-6 text-center text-xs text-slate-400">
-            Protected by multi-factor authentication
+            Secure admin access
           </p>
         </div>
 
         {/* Bottom badge */}
         <p className="mt-5 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} AdminPanel. All rights reserved.
+          © {new Date().getFullYear()} CheeryTails Admin. All rights reserved.
         </p>
       </div>
     </div>

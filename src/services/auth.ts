@@ -1,7 +1,8 @@
 import { apiRequest, setAuthSession, clearAuthSession, type AuthUser } from '../lib/api';
 
 interface LoginData {
-  otp: string;
+  token: string;
+  user: AuthUser;
 }
 
 interface VerifyLoginData {
@@ -9,12 +10,13 @@ interface VerifyLoginData {
   user: AuthUser;
 }
 
-export async function login(email: string, password: string): Promise<string> {
+export async function login(email: string, password: string): Promise<LoginData> {
   const res = await apiRequest<LoginData>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
-  return res.data.otp;
+  setAuthSession(res.data.token, res.data.user);
+  return res.data;
 }
 
 export async function verifyLoginOtp(email: string, otp: string): Promise<VerifyLoginData> {
@@ -26,6 +28,12 @@ export async function verifyLoginOtp(email: string, otp: string): Promise<Verify
   return res.data;
 }
 
-export function logout(): void {
-  clearAuthSession();
+export async function logout(): Promise<void> {
+  try {
+    await apiRequest('/api/auth/logout', { method: 'POST' }, true);
+  } catch (error) {
+    console.error('Logout failed:', error);
+  } finally {
+    clearAuthSession();
+  }
 }
