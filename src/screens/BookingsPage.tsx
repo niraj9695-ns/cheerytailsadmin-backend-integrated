@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarCheck, Inbox, ArrowLeft, ChevronRight } from 'lucide-react';
 import BookingSummaryCards from '../components/BookingSummaryCards';
 import BookingFilters from '../components/BookingFilters';
