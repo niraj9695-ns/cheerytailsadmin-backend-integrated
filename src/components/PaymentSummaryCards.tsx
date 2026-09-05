@@ -12,6 +12,8 @@ import { formatCurrency } from './paymentTypes';
 
 interface PaymentSummaryCardsProps {
   summary: PaymentSummary;
+  currency?: string;
+  loading?: boolean;
 }
 
 interface CardConfig {
@@ -24,12 +26,12 @@ interface CardConfig {
   accent: string;
 }
 
-export default function PaymentSummaryCards({ summary }: PaymentSummaryCardsProps) {
+export default function PaymentSummaryCards({ summary, currency = 'INR', loading = false }: PaymentSummaryCardsProps) {
   const cards: CardConfig[] = [
     {
       key: 'totalCollection',
       label: 'Total Collection',
-      value: formatCurrency(summary.totalCollection),
+      value: formatCurrency(summary.totalCollection, currency),
       icon: <Wallet size={20} />,
       iconBg: 'bg-sky-100',
       iconColor: 'text-sky-600',
@@ -38,7 +40,7 @@ export default function PaymentSummaryCards({ summary }: PaymentSummaryCardsProp
     {
       key: 'todayCollection',
       label: "Today's Collection",
-      value: formatCurrency(summary.todayCollection),
+      value: formatCurrency(summary.todayCollection, currency),
       icon: <CalendarClock size={20} />,
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
@@ -74,7 +76,7 @@ export default function PaymentSummaryCards({ summary }: PaymentSummaryCardsProp
     {
       key: 'totalRefunded',
       label: 'Total Refunded',
-      value: formatCurrency(summary.totalRefunded),
+      value: formatCurrency(summary.totalRefunded, currency),
       icon: <RotateCcw size={20} />,
       iconBg: 'bg-violet-100',
       iconColor: 'text-violet-600',
@@ -104,7 +106,11 @@ export default function PaymentSummaryCards({ summary }: PaymentSummaryCardsProp
           <div className="relative flex items-start justify-between">
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{card.label}</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{card.value}</p>
+              {loading ? (
+                <div className="mt-2 h-7 w-24 bg-slate-200/70 rounded animate-pulse" />
+              ) : (
+                <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{card.value}</p>
+              )}
             </div>
             <div
               className={`w-11 h-11 rounded-xl ${card.iconBg} flex items-center justify-center ${card.iconColor} shrink-0 transition-transform duration-300 group-hover:scale-110`}

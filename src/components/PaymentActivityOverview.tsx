@@ -4,9 +4,11 @@ import { formatCurrency } from './paymentTypes';
 
 interface PaymentActivityOverviewProps {
   summary: PaymentSummary;
+  currency?: string;
+  loading?: boolean;
 }
 
-export default function PaymentActivityOverview({ summary }: PaymentActivityOverviewProps) {
+export default function PaymentActivityOverview({ summary, currency = 'INR', loading = false }: PaymentActivityOverviewProps) {
   const total = summary.successfulPayments + summary.pendingPayments + summary.failedPayments || 1;
   const successPct = Math.round((summary.successfulPayments / total) * 100);
   const pendingPct = Math.round((summary.pendingPayments / total) * 100);
@@ -42,7 +44,11 @@ export default function PaymentActivityOverview({ summary }: PaymentActivityOver
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-500">Total Collection</p>
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(summary.totalCollection)}</p>
+              {loading ? (
+                <div className="mt-1 h-8 w-32 bg-slate-200/70 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-slate-900">{formatCurrency(summary.totalCollection, currency)}</p>
+              )}
             </div>
             <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600">
               <TrendingUp size={22} />
@@ -51,11 +57,11 @@ export default function PaymentActivityOverview({ summary }: PaymentActivityOver
           <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
             <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider">Today</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(summary.todayCollection)}</p>
+              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(summary.todayCollection, currency)}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider">Refunded</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(summary.totalRefunded)}</p>
+              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(summary.totalRefunded, currency)}</p>
             </div>
           </div>
         </div>
@@ -103,7 +109,7 @@ export default function PaymentActivityOverview({ summary }: PaymentActivityOver
                   <div
                     className="w-full rounded-t-lg bg-gradient-to-t from-sky-400 to-blue-500 transition-all duration-300 hover:from-sky-500 hover:to-blue-600"
                     style={{ height: `${(d.value / maxTrend) * 100}%` }}
-                    title={formatCurrency(d.value)}
+                    title={formatCurrency(d.value, currency)}
                   />
                 </div>
                 <span className="text-[11px] text-slate-400 font-medium">{d.day}</span>

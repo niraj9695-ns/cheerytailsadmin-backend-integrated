@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { FileBarChart, Receipt, ChevronDown, Download } from 'lucide-react';
 import { formatCurrency } from './paymentTypes';
 
-export default function PaymentReports() {
+interface PaymentReportsProps {
+  currency?: string;
+}
+
+export default function PaymentReports({ currency = 'INR' }: PaymentReportsProps) {
   const [reportType, setReportType] = useState<'daily' | 'monthly' | 'yearly'>('daily');
   const [reportDate, setReportDate] = useState('');
   const [gstFrom, setGstFrom] = useState('');
@@ -63,8 +67,8 @@ export default function PaymentReports() {
           </div>
           <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100">
             <p className="text-[11px] text-slate-500 uppercase tracking-wider">Revenue — {current.period}</p>
-            <p className="text-3xl font-bold text-slate-900 mt-1">{formatCurrency(current.revenue)}</p>
-            <p className="text-xs text-slate-500 mt-1">Currency: INR (₹)</p>
+            <p className="text-3xl font-bold text-slate-900 mt-1">{formatCurrency(current.revenue, currency)}</p>
+            <p className="text-xs text-slate-500 mt-1">Currency: {currency}</p>
           </div>
           <button className="w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
             <Download size={15} />
@@ -103,11 +107,11 @@ export default function PaymentReports() {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider">Total Sales</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(gstData.totalSales)}</p>
+              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(gstData.totalSales, currency)}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider">Total GST</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(gstData.totalGst)}</p>
+              <p className="text-lg font-bold text-slate-800 mt-1">{formatCurrency(gstData.totalGst, currency)}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider">Transactions</p>
@@ -119,7 +123,7 @@ export default function PaymentReports() {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">Currency: INR (₹)</p>
+            <p className="text-xs text-slate-500">Currency: {currency}</p>
             <button className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold shadow-md shadow-blue-500/25 hover:from-sky-400 hover:to-blue-500 transition-all active:scale-[0.98]">
               <Receipt size={15} />
               Generate Report

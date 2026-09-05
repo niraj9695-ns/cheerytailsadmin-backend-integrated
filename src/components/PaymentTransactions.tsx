@@ -1,16 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, X, Eye, RefreshCw, Inbox } from 'lucide-react';
 import type { Transaction, PaymentStatus } from './paymentTypes';
 import { formatCurrency, formatDateTime } from './paymentTypes';
 import { PaymentStatusBadge, BookingStatusBadge } from './PaymentStatusBadge';
 import Pagination from './Pagination';
+import { fetchPaymentTransactions } from '../services/payments';
 
 interface PaymentTransactionsProps {
-  transactions: Transaction[];
-  loading?: boolean;
-  error?: string;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
+  currency?: string;
+  externalRefreshKey?: number;
 }
 
 const methodIcon: Record<string, string> = {
@@ -21,11 +19,8 @@ const methodIcon: Record<string, string> = {
 };
 
 export default function PaymentTransactions({
-  transactions,
-  loading = false,
-  error = '',
-  onRefresh,
-  isRefreshing = false,
+  currency = 'INR',
+  externalRefreshKey = 0,
 }: PaymentTransactionsProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
@@ -35,20 +30,56 @@ export default function PaymentTransactions({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const filtered = useMemo(() => {
-    return transactions.filter((t) => {
-      const q = search.toLowerCase();
-      const matchesSearch =
-        t.paymentId.toLowerCase().includes(q) ||
-        t.bookingId.toLowerCase().includes(q) ||
-        t.userId.toLowerCase().includes(q) ||
-        (t.invoiceNumber ?? '').toLowerCase().includes(q);
-      const matchesStatus = statusFilter === 'all' || t.paymentStatus === statusFilter;
-      const matchesFrom = !fromDate || new Date(t.createdAt) >= new Date(fromDate);
-      const matchesTo = !toDate || new Date(t.createdAt) <= new Date(toDate + 'T23:59:59');
-      return matchesSearch && matchesStatus && matchesFrom && matchesTo;
-    });
-  }, [transactions, search, statusFilter, fromDate, toDate]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadTransactions = useCallback(
+    async (showRefreshing = false) => {
+      if (showRefreshing) {
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError('');
+
+      try {
+        const data = await fetchPaymentTransactions({
+          status: statusFilter === 'all' ? '' : statusFilter,
+          from: fromDate || undefined,
+          to: toDate || undefined,
+        });
+        setTransactions(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load transactions');
+      } finally {
+        if (showRefreshing) setIsRefreshing(false);
+        else setLoading(false);
+      }
+    },
+    [statusFilter, fromDate, toDate],
+  );
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  useEffect(() => {
+    if (externalRefreshKey > 0) {
+      loadTransactions(true);
+    }
+  }, [externalRefreshKey, loadTransactions]);
+
+  const filtered = transactions.filter((t) => {
+    const q = search.toLowerCase();
+    return (
+      t.paymentId.toLowerCase().includes(q) ||
+      t.bookingId.toLowerCase().includes(q) ||
+      t.userId.toLowerCase().includes(q) ||
+      (t.invoiceNumber ?? '').toLowerCase().includes(q)
+    );
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -102,15 +133,14 @@ export default function PaymentTransactions({
           <p className="text-xs text-slate-400">
             {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
           </p>
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors"
-            >
-              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          )}
+          <button
+            onClick={() => loadTransactions(true)}
+            disabled={isRefreshing}
+            className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
         </div>
       </div>
 
@@ -177,7 +207,7 @@ export default function PaymentTransactions({
         <div className="p-8 text-center">
           <p className="text-sm text-red-600 font-medium">{error}</p>
           <button
-            onClick={onRefresh}
+            onClick={() => loadTransactions()}
             className="mt-4 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
             Retry
@@ -221,8 +251,8 @@ export default function PaymentTransactions({
                         {t.paymentMethod}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-sm font-bold text-slate-800">{formatCurrency(t.totalAmount)}</td>
-                    <td className="px-4 py-3.5 text-sm text-slate-600">{formatCurrency(t.advanceAmount)}</td>
+                    <td className="px-4 py-3.5 text-sm font-bold text-slate-800">{formatCurrency(t.totalAmount, currency)}</td>
+                    <td className="px-4 py-3.5 text-sm text-slate-600">{formatCurrency(t.advanceAmount, currency)}</td>
                     <td className="px-4 py-3.5"><PaymentStatusBadge status={t.paymentStatus} /></td>
                     <td className="px-4 py-3.5"><BookingStatusBadge status={t.bookingStatus} /></td>
                     <td className="px-4 py-3.5 text-sm text-slate-500">{t.paidAt ? formatDateTime(t.paidAt) : '-'}</td>
@@ -262,11 +292,11 @@ export default function PaymentTransactions({
                   </div>
                   <div>
                     <p className="text-slate-400">Total</p>
-                    <p className="text-slate-800 font-bold">{formatCurrency(t.totalAmount)}</p>
+                    <p className="text-slate-800 font-bold">{formatCurrency(t.totalAmount, currency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-400">Advance</p>
-                    <p className="text-slate-600 font-medium">{formatCurrency(t.advanceAmount)}</p>
+                    <p className="text-slate-600 font-medium">{formatCurrency(t.advanceAmount, currency)}</p>
                   </div>
                   <div>
                     <p className="text-slate-400">Booking Status</p>

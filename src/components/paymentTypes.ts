@@ -26,8 +26,23 @@ export interface PaymentSummary {
   pendingRefunds: number;
 }
 
-export function formatCurrency(value: number): string {
-  return `₹${value.toLocaleString('en-IN')}`;
+const currencySymbols: Record<string, string> = {
+  INR: '\u20B9',
+  USD: '$',
+  EUR: '\u20AC',
+  GBP: '\u00A3',
+};
+
+export function getCurrencySymbol(currency: string): string {
+  return currencySymbols[currency.toUpperCase()] ?? currency + ' ';
+}
+
+export function formatCurrency(value: number, currency: string = 'INR'): string {
+  const symbol = getCurrencySymbol(currency);
+  if (currency.toUpperCase() === 'INR') {
+    return `${symbol}${value.toLocaleString('en-IN')}`;
+  }
+  return `${symbol}${value.toLocaleString('en-US')}`;
 }
 
 export function formatDateTime(dateStr: string): string {
