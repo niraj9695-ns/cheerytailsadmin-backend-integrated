@@ -8,6 +8,7 @@ const paymentConfig: Record<PaymentStatus, { bg: string; text: string; dot: stri
   success: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Success' },
   pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Pending' },
   failed: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Failed' },
+  refunded: { bg: 'bg-violet-50', text: 'text-violet-700', dot: 'bg-violet-500', label: 'Refunded' },
 };
 
 export function PaymentStatusBadge({ status }: PaymentStatusBadgeProps) {

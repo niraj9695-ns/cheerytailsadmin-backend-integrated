@@ -1,4 +1,4 @@
-export type PaymentStatus = 'success' | 'pending' | 'failed';
+export type PaymentStatus = 'success' | 'pending' | 'failed' | 'refunded';
 export type BookingStatus = 'accepted' | 'pending' | 'rejected' | 'cancelled' | 'completed';
 export type PaymentMethod = 'UPI' | 'Card' | 'Net Banking' | 'Other';
 

@@ -159,6 +159,7 @@ export default function PaymentTransactions({
                 <option value="success">Success</option>
                 <option value="pending">Pending</option>
                 <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
