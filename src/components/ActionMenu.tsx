@@ -1,0 +1,104 @@
+import { useRef, useState } from 'react';
+import { MoreVertical, Eye, CheckCircle, Trash2, Building2, CalendarCheck } from 'lucide-react';
+import MenuDropdown from './MenuDropdown';
+
+interface ActionItem {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  variant?: 'default' | 'danger';
+}
+
+interface ActionMenuProps {
+  onView?: () => void;
+  onViewCenters?: () => void;
+  onViewBookings?: () => void;
+  onApprove?: () => void;
+  onDelete?: () => void;
+}
+
+export default function ActionMenu({ onView, onViewCenters, onViewBookings, onApprove, onDelete }: ActionMenuProps) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const actions: ActionItem[] = [
+    ...(onView
+      ? [{ label: 'View Owner', icon: <Eye size={15} />, onClick: onView, variant: 'default' as const }]
+      : []),
+    ...(onViewCenters
+      ? [
+          {
+            label: 'View Centers',
+            icon: <Building2 size={15} />,
+            onClick: onViewCenters,
+            variant: 'default' as const,
+          },
+        ]
+      : []),
+    ...(onViewBookings
+      ? [
+          {
+            label: 'View Bookings',
+            icon: <CalendarCheck size={15} />,
+            onClick: onViewBookings,
+            variant: 'default' as const,
+          },
+        ]
+      : []),
+    ...(onApprove
+      ? [
+          {
+            label: 'Approve Owner',
+            icon: <CheckCircle size={15} />,
+            onClick: onApprove,
+            variant: 'default' as const,
+          },
+        ]
+      : []),
+    ...(onDelete
+      ? [
+          {
+            label: 'Delete Owner',
+            icon: <Trash2 size={15} />,
+            onClick: onDelete,
+            variant: 'danger' as const,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+        aria-label="Actions"
+        aria-haspopup
+        aria-expanded={open}
+      >
+        <MoreVertical size={16} />
+      </button>
+
+      <MenuDropdown open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} width={176}>
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            onClick={() => {
+              action.onClick();
+              setOpen(false);
+            }}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+              action.variant === 'danger'
+                ? 'text-red-600 hover:bg-red-50'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {action.icon}
+            {action.label}
+          </button>
+        ))}
+      </MenuDropdown>
+    </>
+  );
+}
