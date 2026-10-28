@@ -6,7 +6,14 @@ import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/Button';
-import { approveCenter, fetchCenters, suspendCenter, type BoardingCenter } from '../services/centers';
+import ConfirmModal from '../components/ConfirmModal';
+import {
+  approveCenter,
+  deleteCenter,
+  fetchCenters,
+  suspendCenter,
+  type BoardingCenter,
+} from '../services/centers';
 import { showActionNotification } from '../lib/notifications';
 
 interface ManageCentersPageProps {
@@ -86,6 +93,7 @@ export default function ManageCentersPage({
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [centers, setCenters] = useState<BoardingCenter[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<BoardingCenter | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -184,6 +192,24 @@ export default function ManageCentersPage({
       }
     } catch (actionError) {
       setActionError(actionError instanceof Error ? actionError.message : 'Failed to suspend center');
+    }
+  }
+
+  async function handleDeleteCenter() {
+    const center = deleteTarget;
+    if (!center) return;
+
+    await deleteCenter(center.id);
+    setCenters((prev) => prev.filter((item) => item.id !== center.id));
+    const remainingFilteredCount =
+      filtered.length - (filtered.some((item) => item.id === center.id) ? 1 : 0);
+    setCurrentPage((page) =>
+      Math.min(page, Math.max(1, Math.ceil(remainingFilteredCount / itemsPerPage))),
+    );
+    try {
+      await showActionNotification('center_deleted', center.center_name);
+    } catch (notificationError) {
+      console.error('Failed to show center deletion notification:', notificationError);
     }
   }
 
@@ -411,6 +437,7 @@ export default function ManageCentersPage({
                           onView={() => handleView(center.id)}
                           onApprove={() => handleApprove(center.id, center.center_name)}
                           onSuspend={() => handleSuspend(center.id, center.center_name)}
+                          onDelete={() => setDeleteTarget(center)}
                           isActive={center.is_active === '1'}
                         />
                       </td>
@@ -471,6 +498,7 @@ export default function ManageCentersPage({
                         onView={() => handleView(center.id)}
                         onApprove={() => handleApprove(center.id, center.center_name)}
                         onSuspend={() => handleSuspend(center.id, center.center_name)}
+                        onDelete={() => setDeleteTarget(center)}
                         isActive={center.is_active === '1'}
                       />
                     </div>
@@ -505,6 +533,7 @@ export default function ManageCentersPage({
                       onView={() => handleView(center.id)}
                       onApprove={() => handleApprove(center.id, center.center_name)}
                       onSuspend={() => handleSuspend(center.id, center.center_name)}
+                      onDelete={() => setDeleteTarget(center)}
                       isActive={center.is_active === '1'}
                     />
                   </div>
@@ -538,6 +567,7 @@ export default function ManageCentersPage({
                     </div>
                     <StatusBadge status={center.is_active === '1' ? 'active' : 'suspended'} />
                   </div>
+
                 </div>
               );
               })}
@@ -558,6 +588,15 @@ export default function ManageCentersPage({
           </>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        variant="delete"
+        entityLabel="Center"
+        ownerName={deleteTarget?.center_name ?? ''}
+        onConfirm={handleDeleteCenter}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

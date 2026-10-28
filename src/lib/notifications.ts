@@ -2,7 +2,8 @@ export type NotificationActionType =
   | 'owner_approved'
   | 'owner_deleted'
   | 'center_approved'
-  | 'center_suspended';
+  | 'center_suspended'
+  | 'center_deleted';
 
 interface NotificationPayload {
   title: string;
@@ -53,6 +54,10 @@ export async function showActionNotification(
     center_suspended: {
       title: 'Center suspended',
       body: `${name} has been suspended.`,
+    },
+    center_deleted: {
+      title: 'Center deleted',
+      body: `${name} has been deleted.`,
     },
   };
 

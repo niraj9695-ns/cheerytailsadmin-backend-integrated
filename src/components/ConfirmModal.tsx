@@ -11,6 +11,7 @@ interface ConfirmModalProps {
   isOpen: boolean;
   variant: ModalVariant;
   ownerName: string;
+  entityLabel?: string;
   /** Called when user confirms — return a rejected Promise to trigger error state */
   onConfirm: () => Promise<void>;
   onClose: () => void;
@@ -70,6 +71,7 @@ export default function ConfirmModal({
   isOpen,
   variant,
   ownerName,
+  entityLabel = 'Owner',
   onConfirm,
   onClose,
   onSuccess,
@@ -78,6 +80,16 @@ export default function ConfirmModal({
   const [errorMsg, setErrorMsg] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
   const cfg = config[variant];
+  const isCenterDelete = variant === 'delete' && entityLabel !== 'Owner';
+  const title = isCenterDelete ? `Delete ${entityLabel}` : cfg.title;
+  const message = isCenterDelete
+    ? `Are you sure you want to delete ${entityLabel.toLowerCase()} ${ownerName}? This action cannot be undone and all associated data will be permanently removed.`
+    : cfg.message(ownerName);
+  const actionLabel = isCenterDelete ? `Delete ${entityLabel}` : cfg.actionLabel;
+  const successTitle = isCenterDelete ? `${entityLabel} Deleted` : cfg.successTitle;
+  const successMessage = isCenterDelete
+    ? `${entityLabel} ${ownerName} has been permanently removed from the platform.`
+    : cfg.successMessage(ownerName);
 
   // Reset state each time modal opens
   useEffect(() => {
@@ -181,7 +193,7 @@ export default function ConfirmModal({
 
               {/* Title */}
               <h2 id="modal-title" className="text-xl font-bold text-slate-900 mb-2">
-                {cfg.title}
+                {title}
               </h2>
 
               {/* Delete-specific warning banner */}
@@ -194,12 +206,12 @@ export default function ConfirmModal({
 
               {/* Message */}
               <p className="text-sm text-slate-600 leading-relaxed mb-1">
-                {cfg.message(ownerName)}
+                {message}
               </p>
 
               {/* Owner name highlight */}
               <p className="text-sm font-semibold text-slate-800 mb-5">
-                Owner:{' '}
+                {entityLabel}:{' '}
                 <span className={variant === 'delete' ? 'text-red-600' : 'text-emerald-700'}>
                   {ownerName}
                 </span>
@@ -232,7 +244,7 @@ export default function ConfirmModal({
                       : 'focus-visible:ring-red-500'
                   }`}
                 >
-                  {status === 'error' ? 'Try Again' : cfg.actionLabel}
+                  {status === 'error' ? 'Try Again' : actionLabel}
                 </button>
               </div>
             </div>
@@ -254,7 +266,7 @@ export default function ConfirmModal({
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-slate-800">
-                {variant === 'approve' ? 'Approving Owner…' : 'Deleting Owner…'}
+                {variant === 'approve' ? `Approving ${entityLabel}…` : `Deleting ${entityLabel}…`}
               </p>
               <p className="text-sm text-slate-500 mt-1">Please wait, this won't take long.</p>
             </div>
@@ -270,9 +282,9 @@ export default function ConfirmModal({
               <cfg.SuccessIcon size={32} className={cfg.successIconColor} />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">{cfg.successTitle}</p>
+              <p className="text-lg font-bold text-slate-900">{successTitle}</p>
               <p className="text-sm text-slate-500 mt-1.5 max-w-[280px] mx-auto leading-relaxed">
-                {cfg.successMessage(ownerName)}
+                {successMessage}
               </p>
             </div>
             <div className={`w-full h-1 rounded-full overflow-hidden bg-slate-100`}>

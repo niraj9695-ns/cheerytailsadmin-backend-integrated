@@ -196,3 +196,7 @@ export async function approveCenter(id: string): Promise<void> {
 export async function suspendCenter(id: string): Promise<void> {
   await apiRequest<unknown>(`/api/admin/boarding-centers/suspend/${id}`, { method: 'POST' }, true);
 }
+
+export async function deleteCenter(id: string): Promise<void> {
+  await apiRequest<unknown>(`/api/admin/boarding-centers/delete/${id}`, { method: 'DELETE' }, true);
+}

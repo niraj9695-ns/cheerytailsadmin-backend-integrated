@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { MoreVertical, Eye, CheckCircle, Ban } from 'lucide-react';
+import { MoreVertical, Eye, CheckCircle, Ban, Trash2 } from 'lucide-react';
 import MenuDropdown from './MenuDropdown';
 
 interface ActionItem {
@@ -13,6 +13,7 @@ interface CenterActionMenuProps {
   onView?: () => void;
   onApprove?: () => void;
   onSuspend?: () => void;
+  onDelete?: () => void;
   isActive?: boolean;
 }
 
@@ -20,6 +21,7 @@ export default function CenterActionMenu({
   onView,
   onApprove,
   onSuspend,
+  onDelete,
   isActive = true,
 }: CenterActionMenuProps) {
   const [open, setOpen] = useState(false);
@@ -45,6 +47,16 @@ export default function CenterActionMenu({
             label: 'Suspend Center',
             icon: <Ban size={15} />,
             onClick: onSuspend,
+            variant: 'danger' as const,
+          },
+        ]
+      : []),
+    ...(onDelete
+      ? [
+          {
+            label: 'Delete Center',
+            icon: <Trash2 size={15} />,
+            onClick: onDelete,
             variant: 'danger' as const,
           },
         ]
